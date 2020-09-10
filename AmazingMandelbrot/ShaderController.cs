@@ -175,8 +175,12 @@ namespace AmazingMandelbrot
         {
             mWidth = w;
             mHeight = h;
+            GL.DeleteTexture(ImageTexHandle);
+            GL.DeleteTexture(IntermediateTexHandle);
+            GL.DeleteTexture(ReverseTexHandle);
             ImageTexHandle = GenerateTex();
             IntermediateTexHandle = GenerateTex();
+            ReverseTexHandle = GenerateTex();
         }
         private static int SetupComputeProgram(string csSrc)
         {

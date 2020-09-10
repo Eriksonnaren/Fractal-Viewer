@@ -23,7 +23,6 @@ namespace AmazingMandelbrot
         FractalWindow MainFractalWindow;
         FractalWindow MinibrotButton;
         EmptyComponent MinibrotContainer;
-        bool PrepareMainWindowResize = false;
         bool EnableMinibrots;
         int CurrentMinibrotOrder;
         List<FractalWindow> MinibrotWindows = new List<FractalWindow>();
@@ -45,6 +44,7 @@ namespace AmazingMandelbrot
         int TextCursorTimer;
         double PolynomialAnimationTimer = 1;
         CursorSystem CursorSystem;
+        int ResizeTimer = 0;
         public Main(Size Size)
         {
             SF.Alignment = StringAlignment.Center;
@@ -71,10 +71,6 @@ namespace AmazingMandelbrot
             MinibrotButton.Controller.Compute();
             MinibrotButton.EnableInteraction = false;
             MinibrotButton.MouseDownEvent += MinibrotButtonClicked;
-            //int DrawerSize = 50;
-            int CursorSize = 40;
-            //JuliaDrawer = new EmptyComponent(new RectangleF(JuliaButton.Rect.Right-DrawerSize, JuliaButton.Rect.Y+(JuliaButton.Rect.Height- DrawerSize)/2, DrawerSize, DrawerSize));
-            //GuiHandler.Elements.Add(JuliaDrawer);
             GuiHandler.Elements.Add(MinibrotButton);
             
             DrawIterationDisplay();
@@ -93,10 +89,10 @@ namespace AmazingMandelbrot
             GuiHandler.Elements.Add(PolynomialTextDisplay);
 
             ErrorMessageTextDisplay = new TextDisplay(new RectangleF(
-                PolynomialTextDisplay.Rect.X, 
-                PolynomialTextDisplay.Rect.Y - PolynomialTextDisplay.Rect.Height-10,
+                0, 
+                - PolynomialTextDisplay.Rect.Height-10,
                 PolynomialTextDisplay.Rect.Width, PolynomialTextDisplay.Rect.Height));
-            GuiHandler.Elements.Add(ErrorMessageTextDisplay);
+            PolynomialTextDisplay.ChildElements.Add(ErrorMessageTextDisplay);
             ErrorMessageTextDisplay.PrepareDraw();
             ErrorMessageTextDisplay.Enabled = false;
             ErrorMessageTextDisplay.DrawFrame = false;
@@ -122,11 +118,6 @@ namespace AmazingMandelbrot
 
             //MainFractalWindow.Controller.Compute();
             
-            if (PrepareMainWindowResize)
-            {
-                MainWindowResize();
-                PrepareMainWindowResize = false;
-            }
             if (IterationSlider.HoldingHandle)
             {
                 double A = 10*(IterationSlider.Value - 0.5);
@@ -288,12 +279,14 @@ namespace AmazingMandelbrot
             }
 
         }
-        void MainWindowResize()
+        public void Resize(int w, int h)
         {
-            MainFractalWindow.Resize(Size.Width / 2, MainFractalWindow.Rect.Height);
-            MainFractalWindow.Controller.Zoom /= 2;
+            Size = new Size(w, h);
+            MainFractalWindow.Resize(w, h);
             MainFractalWindow.Controller.Compute();
-            MainFractalWindow.Rect.X = 0;
+            MainFractalWindow.Show(this);
+            PolynomialTextDisplay.Rect = new RectangleF(10, Size.Height - 50, 300, 40);
+            CursorSystem.RepositionJulia();
         }
         public void TypeChar(char C)
         {

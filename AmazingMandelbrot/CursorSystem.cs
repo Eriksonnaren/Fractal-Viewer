@@ -38,7 +38,9 @@ namespace AmazingMandelbrot
         PointF OldCursorPosition;
         FractalMath FractalMath = new FractalMath();
         public FractalWindow JuliaWindow;
-        const float JuliaWindowSize=500;
+        const float JuliaSizeBoxSize=40;
+        EmptyComponent JuliaSizeBox;
+        float JuliaWindowSize=500;
         public CursorSystem(FractalWindow mainWindow)
         {
             MainWindow = mainWindow;
@@ -88,7 +90,12 @@ namespace AmazingMandelbrot
             JuliaWindow.Controller.Julia = true;
             JuliaWindow.Enabled = false;
             JuliaWindow.Controller.QuaternionJulia = false;
+            JuliaSizeBox = new EmptyComponent(new RectangleF(5, JuliaWindowSize- JuliaSizeBoxSize-5, JuliaSizeBoxSize, JuliaSizeBoxSize));
             mainWindow.ChildElements.Add(JuliaWindow);
+            JuliaWindow.ChildElements.Add(JuliaSizeBox);
+            JuliaSizeBox.DragEvent += JuliaSizeBoxDrag;
+            JuliaSizeBox.LateDraw += JuliaResizeLateDraw;
+            JuliaSizeBox.DrawFrame = false;
 
             Julia3dButton = new FractalWindow(new RectangleF(5, 5, ButtonSize, ButtonSize));
             Julia3dButton.Controller.Julia=true;
@@ -160,6 +167,36 @@ namespace AmazingMandelbrot
                 CursorElement.Rect.Location = new PointF(CursorPosition.X - CursorElement.Rect.Width / 2,
                 CursorPosition.Y - CursorElement.Rect.Height / 2);
             }
+        }
+        public void RepositionJulia()
+        {
+            JuliaWindow.Rect=new RectangleF(MainWindow.Rect.Width - JuliaWindowSize - 20, 20, JuliaWindowSize, JuliaWindowSize);
+            JuliaSizeBox.Rect = new RectangleF(5, JuliaWindowSize - JuliaSizeBoxSize - 5, JuliaSizeBoxSize, JuliaSizeBoxSize);
+        }
+        void JuliaSizeBoxDrag(GuiElement Sender, PointF MousePos, PointF StartPos, PointF DeltaPos, MouseButtons ButtonStatus)
+        {
+            float X = JuliaWindowSize-(JuliaSizeBox.Rect.X + MousePos.X);
+            float Y = JuliaSizeBox.Rect.Y + +MousePos.Y;
+            JuliaWindowSize = Math.Max((X+Y)/2+ JuliaSizeBoxSize/2+5,200);
+            JuliaWindow.Resize(JuliaWindowSize, JuliaWindowSize);
+            JuliaWindow.Controller.Compute();
+            RepositionJulia();
+        }
+        void JuliaResizeLateDraw(GuiElement sender, Main M)
+        {
+            GL.Color3(JuliaSizeBox.BackgroundColor);
+            GL.Begin(PrimitiveType.Triangles);
+            GL.Vertex2(0, 0);
+            GL.Vertex2(0, JuliaSizeBoxSize);
+            GL.Vertex2(JuliaSizeBoxSize, JuliaSizeBoxSize);
+            GL.End();
+            GL.LineWidth(2);
+            GL.Color3(JuliaSizeBox.FrameColor);
+            GL.Begin(PrimitiveType.LineLoop);
+            GL.Vertex2(0, 0);
+            GL.Vertex2(0, JuliaSizeBoxSize);
+            GL.Vertex2(JuliaSizeBoxSize,JuliaSizeBoxSize);
+            GL.End();
         }
         public void UpdateCursorWorldPos()
         {

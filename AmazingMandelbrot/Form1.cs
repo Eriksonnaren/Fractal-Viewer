@@ -32,6 +32,7 @@ namespace AmazingMandelbrot
         GLControl GLcontrol;
         Main Main;
         Stopwatch stopwatch = new Stopwatch();
+        int ResizeTimer = 0;
         public Form1()
         {
             InitializeComponent();
@@ -60,10 +61,8 @@ namespace AmazingMandelbrot
             ShaderController.GenreateComputeProgram();
             Main = new Main(GLcontrol.Size);
             //Console.WriteLine();
-            
-        }
 
-        
+        }
 
         private void T_Tick(object sender, EventArgs e)
         {
@@ -72,14 +71,25 @@ namespace AmazingMandelbrot
             int h = GLcontrol.Height;
             
             GLcontrol.MakeCurrent();
-            GL.ClearColor(Color.Blue);
+            //GL.ClearColor(Color.Blue);
             SetOrthographicProjection(0, 0, w, h);
+            GL.Viewport(0, 0, w, h);
             //ShaderController.Compute();
-            
+
             Main.Update();
-            Main.Draw(PointToClient(MousePosition), MouseButtons, ContainsFocus);
+            if(ResizeTimer>0)
+                ResizeTimer--;
+            if (ResizeTimer==1)
+            {
+                Main.Resize(GLcontrol.Width, GLcontrol.Height);
+            }
+            if (ResizeTimer == 0)
+            {
+                Main.Draw(PointToClient(MousePosition), MouseButtons, ContainsFocus);
+                GLcontrol.SwapBuffers();
+            }
             //ShaderController.Draw();
-            GLcontrol.SwapBuffers();
+            
             
         }
         public void SetOrthographicProjection(int x, int y, int w, int h)
@@ -104,6 +114,14 @@ namespace AmazingMandelbrot
         private void Form1_KeyDown(object sender, KeyEventArgs e)
         {
             Main.TypeKey(e.KeyData);
+        }
+
+        private void Form1_SizeChanged(object sender, EventArgs e)
+        {
+            if (Main != null)
+            {
+                ResizeTimer = 10;
+            }
         }
     }
 }
