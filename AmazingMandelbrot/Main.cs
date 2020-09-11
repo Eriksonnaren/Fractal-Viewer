@@ -146,7 +146,7 @@ namespace AmazingMandelbrot
             UpdatePolynomialTextDisplay();
             if(PolynomialAnimationTimer<1)
             {
-                PolynomialAnimationTimer += 0.015;
+                PolynomialAnimationTimer += 0.03;
                 double Lerp = Beizer(PolynomialAnimationTimer);
                 double LerpNew = Lerp;
                 double LerpOld= 1- Lerp;
