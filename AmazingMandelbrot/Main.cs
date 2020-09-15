@@ -42,11 +42,13 @@ namespace AmazingMandelbrot
         PolynomialParser polynomialParser=new PolynomialParser();
         Timer ErrorTimer = new Timer(50);
         int TextCursorTimer;
-        double PolynomialAnimationTimer = 1;
+        public static double PolynomialAnimationTimer = 1;
         CursorSystem CursorSystem;
         int ResizeTimer = 0;
         public Main(Size Size)
         {
+            SetOrthographicProjection(0, 0, Size.Width, Size.Height);
+            
             SF.Alignment = StringAlignment.Center;
             SF.LineAlignment = StringAlignment.Center;
             this.Size = Size;
@@ -68,7 +70,7 @@ namespace AmazingMandelbrot
             MinibrotButton.Controller.ColorScale = 1;
             MinibrotButton.Controller.ColorOffset = 0.9f;
             MinibrotButton.Controller.CameraPos = new Complex(-0.12681960215148277, 0.9871247652863216);
-            MinibrotButton.Controller.Compute();
+            
             MinibrotButton.EnableInteraction = false;
             MinibrotButton.MouseDownEvent += MinibrotButtonClicked;
             GuiHandler.Elements.Add(MinibrotButton);
@@ -100,12 +102,15 @@ namespace AmazingMandelbrot
 
             MainCoefficientArray = polynomialParser.CoefficientArray;
             MainFractalWindow.Controller.CoefficientArray = MainCoefficientArray;
-            MainFractalWindow.Controller.Compute();
 
             CursorSystem = new CursorSystem(MainFractalWindow);
             MainFractalWindow.MouseDownEvent += MainWindowClick;
 
             ErrorTimer.FinishedEvent += ErrorTimerFinish;
+            //GuiHandler.ShowAll(this);
+            GuiHandler.PrepareAll(this);
+            MainFractalWindow.Controller.Compute();
+            MinibrotButton.Controller.Compute();
         }
         public void Update()
         {
@@ -282,6 +287,8 @@ namespace AmazingMandelbrot
         public void Resize(int w, int h)
         {
             Size = new Size(w, h);
+            SetOrthographicProjection(0, 0, Size.Width, Size.Height);
+            GuiHandler.PrepareAll(this);
             MainFractalWindow.Resize(w, h);
             MainFractalWindow.Controller.Compute();
             MainFractalWindow.Show(this);

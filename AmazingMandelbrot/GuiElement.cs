@@ -28,6 +28,7 @@ namespace AmazingMandelbrot
         public GuiHandler.ExternalDrawEvent LateDraw;
         public RectangleF Rect;
         public Vector4 TranslateVector;
+        public Matrix4 projectionMatrix;
         public List<GuiElement> ChildElements = new List<GuiElement>();
         public int FrameSize = 2;
         public bool Enabled = true;

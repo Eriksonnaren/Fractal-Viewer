@@ -63,9 +63,49 @@ namespace AmazingMandelbrot.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
+        internal static byte[] BackCopyFrag {
+            get {
+                object obj = ResourceManager.GetObject("BackCopyFrag", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] BackCopyVert {
+            get {
+                object obj = ResourceManager.GetObject("BackCopyVert", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] DisplayFrag {
+            get {
+                object obj = ResourceManager.GetObject("DisplayFrag", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
         internal static byte[] DisplayShader {
             get {
                 object obj = ResourceManager.GetObject("DisplayShader", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] DisplayVert {
+            get {
+                object obj = ResourceManager.GetObject("DisplayVert", resourceCulture);
                 return ((byte[])(obj));
             }
         }
@@ -83,9 +123,39 @@ namespace AmazingMandelbrot.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
+        internal static byte[] GenerateShaderFrag {
+            get {
+                object obj = ResourceManager.GetObject("GenerateShaderFrag", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] RaymarchFrag {
+            get {
+                object obj = ResourceManager.GetObject("RaymarchFrag", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
         internal static byte[] RaymarchShader {
             get {
                 object obj = ResourceManager.GetObject("RaymarchShader", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
+        internal static byte[] TestShader {
+            get {
+                object obj = ResourceManager.GetObject("TestShader", resourceCulture);
                 return ((byte[])(obj));
             }
         }

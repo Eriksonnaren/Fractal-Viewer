@@ -1,10 +1,9 @@
-#version 430
+#version 400
 uniform vec2 resolution;
-uniform writeonly image2D destTex;
-layout(rgba32f) uniform readonly image2D reverseTex;
-
+uniform sampler2D reverseTex;
+in vec2 fPosition;
+out vec4 fragColor;
 uniform int Iter;
-layout (local_size_x = 16, local_size_y = 16,local_size_z = 1) in;
 uniform double Zoom;
 uniform double CameraReal;
 uniform double CameraImag;
@@ -127,11 +126,11 @@ vec4 MainCompute(dvec2 C)
 		dvec2 NewZ=PolynomialConstants[ArrayMax];
 		for(int i =ArrayMaxZ-2;i>=1;i--)
 		{
-			DerZ=Mult(Z,DerZ)+PolynomialConstants[i]*i;
-			DerC=Mult(Z,DerC)+PolynomialConstantsDerC[i];
+			//DerZ=Mult(Z,DerZ)+PolynomialConstants[i]*i;
+			//DerC=Mult(Z,DerC)+PolynomialConstantsDerC[i];
 			NewZ=Mult(Z,NewZ)+PolynomialConstants[i];
 		}
-		DC=Mult(DC,DerZ)+Mult(Z,DerC)+PolynomialConstantsDerC[0];
+		//DC=Mult(DC,DerZ)+Mult(Z,DerC)+PolynomialConstantsDerC[0];
 		Z=Mult(Z,NewZ)+PolynomialConstants[0];
 
 		
@@ -148,6 +147,7 @@ vec4 MainCompute(dvec2 C)
 	float dr = float(length(DC));
 	
 	float Dist = log(0.5*(r*log(r)/dr));
+	Dist =1;
 	float A = max(L+E,1);
 	if(L==Iter)
 	{
@@ -156,8 +156,8 @@ vec4 MainCompute(dvec2 C)
 	return vec4(A,Dist,0,1);
 }
 void main() {
-	ivec2 storePos = ivec2(gl_GlobalInvocationID.xy);
-	vec2 position = (vec2(gl_GlobalInvocationID.xy)+vec2(0,(resolution.x-resolution.y)/2))/resolution.x;
+	ivec2 storePos = ivec2(fPosition);
+	vec2 position = (vec2(fPosition.xy)+vec2(0,(resolution.x-resolution.y)/2))/resolution.x;
 
 	
 	dvec2 C = position*2*Zoom-Zoom+dvec2(CameraReal,CameraImag);
@@ -170,13 +170,13 @@ void main() {
 		ivec2 SamplePos=storePos+PixelShift;
 		if(SamplePos.x>=0&&SamplePos.y>=0&&SamplePos.x<resolution.x&&SamplePos.y<resolution.y)
 		{
-			Out = imageLoad(reverseTex,SamplePos);
+			Out = texelFetch(reverseTex,SamplePos,0);
 		}else
 		{
 			Out = MainCompute(C);
 		}
 	}
-	imageStore(destTex, storePos, Out);
+	fragColor = vec4(Out.xyz,1);
 }
 
 

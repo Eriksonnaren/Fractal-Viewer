@@ -74,7 +74,7 @@ namespace AmazingMandelbrot
                     //M.G.Transform = E.Mat;
                     Matrix4 Mat = E.Mat2;
                     GL.LoadMatrix(ref Mat);
-
+                    //GL.Viewport((int)E.Element.TranslateVector.X, (int)E.Element.TranslateVector.Y, (int)E.Element.Rect.Width, (int)E.Element.Rect.Height);
                     if (E.Element.DrawFrame)
                         E.Element.DrawFrameAndBackground();
                     //RectangleF R = new RectangleF(0, 0, E.Element.Rect.Width, E.Element.Rect.Height);
@@ -89,6 +89,24 @@ namespace AmazingMandelbrot
             //M.G.ResetTransform();
             //M.G.ResetClip();
         }
+        public void PrepareAll(Main M)
+        {
+            foreach (var E in Elements)
+            {
+                PrepareMatricies(M, E, 0, M.projectionMatrix);
+            }
+        }
+        void PrepareMatricies(Main M, GuiElement E, int Layer, Matrix4 matrix4)
+        {
+            Layer += E.DrawingLayerOffset;
+            matrix4.Row3 += new Vector4(2 * E.Rect.X / M.Size.Width, -2 * E.Rect.Y / M.Size.Height, 0, 0);
+            E.TranslateVector = matrix4.Row3;
+            E.projectionMatrix = matrix4;
+            foreach (var E2 in E.ChildElements)
+            {
+                PrepareRecursive(M, E2, Layer + 1, matrix4);
+            }
+        }
         void PrepareRecursive(Main M, GuiElement E, int Layer, Matrix4 matrix4)
         {
 
@@ -97,6 +115,7 @@ namespace AmazingMandelbrot
             //M.G.TranslateTransform(E.Rect.X, E.Rect.Y);
             matrix4.Row3 += new Vector4(2 * E.Rect.X / M.Size.Width, -2 * E.Rect.Y / M.Size.Height, 0, 0);
             E.TranslateVector = matrix4.Row3;
+            E.projectionMatrix = matrix4;
 
             while (ElementDrawList.Count <= Layer)
                 ElementDrawList.Add(new List<ElementDrawStruct>());

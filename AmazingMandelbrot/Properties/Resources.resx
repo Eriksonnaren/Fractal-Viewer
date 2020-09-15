@@ -118,13 +118,34 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="BackCopyFrag" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\shaders\backcopyfrag.glsl;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="BackCopyVert" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\shaders\backcopyvert.glsl;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="DisplayFrag" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\shaders\displayfrag.glsl;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
   <data name="DisplayShader" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\shaders\displayshader.glsl;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="DisplayVert" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\shaders\displayvert.glsl;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="GenerateShader" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\shaders\generateshader.glsl;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
+  <data name="GenerateShaderFrag" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\shaders\generateshaderfrag.glsl;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="RaymarchFrag" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\shaders\raymarchfrag.glsl;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
   <data name="RaymarchShader" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\shaders\raymarchshader.glsl;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="TestShader" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\shaders\testshader.glsl;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
 </root>

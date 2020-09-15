@@ -96,7 +96,10 @@
       <SubType>Designer</SubType>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <None Include="Shaders\BackCopyFrag.glsl" />
+    <None Include="Shaders\DisplayFrag.glsl" />
     <None Include="Shaders\DisplayShader.glsl" />
+    <None Include="Shaders\DisplayVert.glsl" />
     <None Include="Shaders\GenerateShader.glsl" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
@@ -108,12 +111,16 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <None Include="Shaders\GenerateShaderFrag.glsl" />
+    <None Include="Shaders\RaymarchFrag.glsl" />
     <None Include="Shaders\RaymarchShader.glsl" />
+    <None Include="Shaders\TestShader.glsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Shaders\BackCopyVert.glsl" />
     <Content Include="xmpir32.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

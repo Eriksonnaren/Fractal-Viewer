@@ -40,14 +40,14 @@ namespace AmazingMandelbrot
             
             GraphicsMode graphicsMode = new GraphicsMode(new ColorFormat(8, 8, 8, 8), 24);
             GLcontrol = new GLControl(GraphicsMode.Default, 6, 4, GraphicsContextFlags.ForwardCompatible);
-
+            //GLcontrol = new GLControl();
 
             GLcontrol.Dock = DockStyle.Fill;
             WindowState = FormWindowState.Maximized;
             GLcontrol.Parent = this;
             int w = GLcontrol.Width;
             int h = GLcontrol.Height;
-            GL.Viewport(0, 0, w, h);
+            
             
             T.Interval = 20;
             T.Tick += T_Tick;
@@ -55,6 +55,10 @@ namespace AmazingMandelbrot
             //ShaderId = GL.CreateShader(ShaderType.ComputeShader);
             //ShaderController = new ShaderController(w,h);
             ShaderController.GenreateComputeProgram();
+            ShaderController.GenerateFragProgram();
+            GLcontrol.MakeCurrent();
+            SetOrthographicProjection(0, 0, w, h);
+            GL.Viewport(0, 0, w, h);
             Main = new Main(GLcontrol.Size);
             //Console.WriteLine();
 

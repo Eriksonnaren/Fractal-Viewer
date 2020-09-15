@@ -58,14 +58,14 @@ namespace AmazingMandelbrot
             JuliaButton.Controller.JuliaPos = new Complex(-0.16037822, -1.0375242);
             JuliaButton.EnableInteraction = false;
             
-            JuliaButton.Controller.Compute();
+            
             
 
             PeriodButton.Controller.CameraPos = new Complex(-0.48125,-0.534114583333333);
             PeriodButton.Controller.Zoom = 0.1;
             PeriodButton.Controller.PeriodHighlight = 5;
             PeriodButton.EnableInteraction = false;
-            PeriodButton.Controller.Compute();
+            
             OrbitButton.EnableInteraction = false;
             for (int i = 0; i < AllButtons.Length; i++)
             {
@@ -87,6 +87,7 @@ namespace AmazingMandelbrot
             PeriodButton.ClickEvent += PeriodClick;
             JuliaButton.ClickEvent += JuliaClick;
             JuliaWindow = new FractalWindow(new RectangleF(MainWindow.Rect.Width- JuliaWindowSize-20,20, JuliaWindowSize, JuliaWindowSize));
+            //JuliaWindow = new FractalWindow(new RectangleF(20, 20, JuliaWindowSize, JuliaWindowSize));
             JuliaWindow.Controller.Julia = true;
             JuliaWindow.Enabled = false;
             JuliaWindow.Controller.QuaternionJulia = false;
@@ -116,6 +117,10 @@ namespace AmazingMandelbrot
             FractalMath.CoefficientArray = MainWindow.Controller.CoefficientArray;
             ExtendTimer.Update();
             TeleportTimer.Update();
+            
+        }
+        public void ComputeAll()
+        {
             
         }
         public void CursorLateDraw(GuiElement sender,Main M)
@@ -298,6 +303,8 @@ namespace AmazingMandelbrot
         }
         void EnableMenu()
         {
+            JuliaButton.Controller.Compute();
+            PeriodButton.Controller.Compute();
             CursorElement.Enabled = true;
             MainWindow.EnableInteraction = false;
             ExtendTimer.CountingBackwards = false;
@@ -316,6 +323,7 @@ namespace AmazingMandelbrot
         }
         void ExtendTimerTick()
         {
+            
             UpdateButtonPositions();
         }
         void ExtendTimerFinish()
