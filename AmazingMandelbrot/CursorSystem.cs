@@ -111,6 +111,11 @@ namespace AmazingMandelbrot
             JuliaWindow.ChildElements.Add(Julia3dCutoffButton);
             Julia3dButton.ClickEvent += Julia3dClick;
             Julia3dCutoffButton.ClickEvent += JuliaCutoffClick;
+
+            //CursorWorldPosition = new Complex(-Math.PI/4, -0.15);
+            //CursorPosition = MainWindow.GetScreenFromWorld(CursorWorldPosition);
+            //CursorActive = true;
+            //CursorElement.Enabled = true;
         }
         public void Update()
         {
@@ -209,7 +214,7 @@ namespace AmazingMandelbrot
                 CursorElement.Rect.X + CursorElement.Rect.Width / 2,
                 CursorElement.Rect.Y + CursorElement.Rect.Height / 2
                 ));
-            UpdatePeriod();
+            //UpdatePeriod();
             UpdateJulia();
         }
         public void UpdatePeriod()
@@ -274,11 +279,17 @@ namespace AmazingMandelbrot
         {
             PeriodActive = !PeriodActive;
             PeriodButton.FrameColor = PeriodActive ? Color.Green:Color.Red;
-            if(!PeriodActive)
+            if (!PeriodActive)
             {
                 MainWindow.Controller.PeriodHighlight = 0;
+                JuliaWindow.Controller.PeriodHighlight = 0;
             }
-            UpdatePeriod();
+            else
+            {
+                MainWindow.Controller.PeriodHighlight = 1;
+                JuliaWindow.Controller.PeriodHighlight = 1;
+            }
+            //UpdatePeriod();
         }
         void JuliaClick(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
         {

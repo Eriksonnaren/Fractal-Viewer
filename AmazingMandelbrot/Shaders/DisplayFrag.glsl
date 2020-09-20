@@ -115,6 +115,9 @@ float GetLight(ivec2 storePos)
 void main() {
 	ivec2 storePos = ivec2(fPosition);
 	vec2 position = (fPosition+vec2(0,(resolution.x-resolution.y)/2))/resolution.x;
+	vec4 InputColor = texelFetch(sourceTex,storePos,0);
+	
+	
 	//double S = sin(Time);
 	//double C = cos(Time);
 	//C=(C*0.5+0.5)*0.3;
@@ -161,7 +164,8 @@ void main() {
 		}
 		PowerC=Mult(PowerC,C);
 	}
-	vec4 InputColor = texelFetch(sourceTex,storePos,0);
+	
+	
 	float L = InputColor.x;
 	float Dist = InputColor.y;
 	vec3 Col = vec3(0,0,0);
@@ -173,7 +177,7 @@ void main() {
 		//K=Dist*0.03*ColorScale;
 		K = mod(K ,1.0);
 		float a = exp(-0.1*max(float(L)-8,0));
-		
+		//float a =0;
 		float s = 0.85*(1-a*0.2);
 		a*=0.2;
 
@@ -191,7 +195,7 @@ void main() {
 		if(PeriodHighlight>0)
 		{
 			
-			dvec2 Z0 = C;
+			/*dvec2 Z0 = C;
 			for(int i =0;i<5;i++)//newtons method
 			{
 				dvec2 Z1=Z0;
@@ -228,8 +232,13 @@ void main() {
 					Col.b=Col.g=R*Q;
 					Col.g+=(P);
 				
-			}
-			
+			}*/
+		
+		}
+		if(QuaternionJulia==0)
+		{
+			float V = -0.06*log(InputColor.z);
+			Col=vec3(V*V,V,sqrt(V))*V;
 		}
 		//float Q = sqrt(Close);
 		//float s = 0.6366*atan(100*Q);
@@ -237,6 +246,7 @@ void main() {
 		//r=g=b=1-s;
 
 	}
+	
 	if(QuaternionJulia==1)
 	{
 		vec3 BaseColor=Col;
@@ -247,7 +257,21 @@ void main() {
 		Col+=BaseColor*InputColor.y;
 		Col+=vec3(1,1,1)*(1.0-exp(-Iter*0.004))*0.8;
 	}
+	/*if(min(mod(abs(RealC),1),mod(abs(ImagC),1))<0.005*Zoom)
+	{
+		Col=vec3(0,0,0);
+	}
+	if(abs(RealC)<0.005*Zoom)
+	{
+		Col=vec3(1,0,0);
+	}
+	if(abs(ImagC)<0.005*Zoom)
+	{
+		Col=vec3(0,1,0);
+	}*/
+
 	fragColor=vec4(Col,1.0f);//+vec4(0.1,0,0,0);//+texelFetch(sourceTex,storePos,0);
+	//fragColor = InputColor;
 	//fragColor=texture2D(sourceTex,fPosition/resolution);
 	//imageStore(destTex, storePos, vec4(Col,1.0f));
 	//imageStore(reverseTex, storePos, InputColor);

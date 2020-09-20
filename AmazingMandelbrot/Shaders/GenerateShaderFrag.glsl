@@ -81,6 +81,14 @@ dvec2 ComputeDerivativeC(dvec2 Z)
 	}
 	return NewZ;
 }
+double logd(double a)
+{
+	const double s=0.001;
+	double L1 = log(float(a));
+	double L2 = log(float(a+s));
+	double Q = mod(a/s,1.0);
+	return L1*(1-Q)+L2*Q;
+}
 vec4 MainCompute(dvec2 C)
 {
 	dvec2 Z = dvec2(0);
@@ -90,7 +98,7 @@ vec4 MainCompute(dvec2 C)
 		C= dvec2(JuliaReal,JuliaImag);
 	}
 	int L;
-	float E = 0;
+	double E = 0;
 	
 	for(int i=0;i<ArrayMaxZ;i++)
 	{
@@ -115,6 +123,8 @@ vec4 MainCompute(dvec2 C)
 	}
 	dvec2 DC = dvec2(1,0);
 	int ArrayMax = ArrayMaxZ-1;
+	double MinDist = 100;
+	double AverageDist =0;
 	for(L=0;L<Iter;L++)
 	{
 
@@ -132,14 +142,16 @@ vec4 MainCompute(dvec2 C)
 		}
 		//DC=Mult(DC,DerZ)+Mult(Z,DerC)+PolynomialConstantsDerC[0];
 		Z=Mult(Z,NewZ)+PolynomialConstants[0];
-
+		
 		
 		double RR = Z.x*Z.x;
 		double II = Z.y*Z.y;
+		//double M = 0.05*(RR*II)/((RR+II)*sqrt(RR+II));
+		MinDist=min(MinDist,RR+II);
 		if(RR+II>100*100)
 		{
 			int Power = ArrayMaxZ-1;
-			E=3-log(log(float(length(PolynomialConstants[Power])))/(Power-1)+log(float(RR+II))/2)/log(Power);
+			E=3-logd(logd((length(PolynomialConstants[Power])))/(Power-1)+logd((RR+II))/2)/logd(Power);
 			break;
 		}
 	}
@@ -148,12 +160,12 @@ vec4 MainCompute(dvec2 C)
 	
 	float Dist = log(0.5*(r*log(r)/dr));
 	Dist =1;
-	float A = max(L+E,1);
+	double A = max(L+E,1);
 	if(L==Iter)
 	{
 		A=0;
 	}
-	return vec4(A,Dist,0,1);
+	return vec4(A,Dist,MinDist,1);
 }
 void main() {
 	ivec2 storePos = ivec2(fPosition);

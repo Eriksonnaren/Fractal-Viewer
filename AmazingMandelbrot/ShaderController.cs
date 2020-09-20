@@ -51,7 +51,7 @@ namespace AmazingMandelbrot
             
             
             
-            ImageTexHandle = GenerateTex("MainImage");
+            //ImageTexHandle = GenerateTex("MainImage");
             
             IntermediateTexHandle = GenerateTex("IntermediateTexture");
             ReverseTexHandle = GenerateTex("BackTexture");
@@ -230,9 +230,9 @@ namespace AmazingMandelbrot
             int texHandle = GL.GenTexture();
             GL.ActiveTexture(TextureUnit.Texture0);
             GL.BindTexture(TextureTarget.Texture2D, texHandle);
+            
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)All.Linear);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)All.Linear);
-            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba16f, mWidth, mHeight, 0, PixelFormat.Rgba, PixelType.Float, IntPtr.Zero);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)All.Linear);GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba16f, mWidth, mHeight, 0, PixelFormat.Rgba, PixelType.Float, IntPtr.Zero);
             GL.BindImageTexture(texHandle, texHandle, 0, false, 0, TextureAccess.WriteOnly, SizedInternalFormat.Rgba16f);
             GL.ObjectLabel(ObjectLabelIdentifier.Texture, texHandle, Name.Length, Name);
             return texHandle;
