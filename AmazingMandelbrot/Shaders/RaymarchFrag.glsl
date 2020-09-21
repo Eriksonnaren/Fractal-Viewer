@@ -1,5 +1,19 @@
 #version 400
-uniform vec2 resolution;
+struct DataStruct
+{
+	double IterationCount;
+	double MinDistance;
+	vec2 EndPoint;
+};
+layout(std140) buffer OldDataBlock
+{
+  DataStruct OldData[];
+};
+layout(std140) buffer DataBlock
+{
+  DataStruct Data[];
+};
+uniform ivec2 resolution;
 uniform int Iter;
 in vec2 fPosition;
 out vec4 fragColor;
@@ -107,6 +121,7 @@ vec3 Ray(vec3 Pos,vec3 Vel)
 void main() {
 	ivec2 storePos = ivec2(fPosition);
 	vec2 position = 1.0*vec2(fPosition - resolution.xy*0.5)/resolution.x;
+	int index = int(storePos.y*resolution.x+storePos.x);
 	mat3 CameraMatrix = mat3(
 	normalize(CameraPos),
 	vec3(0),
@@ -133,5 +148,6 @@ void main() {
 		PowerC=Mult(PowerC,C);
 	}
 	vec3 Out = Ray(CameraPos,RayVel);
+	Data[index]=DataStruct(Out.z,0,vec2(0));
 	fragColor = vec4(Out.z*Out.y,Out.y,Out.x,1);
 }

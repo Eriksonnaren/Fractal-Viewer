@@ -2,7 +2,7 @@
 in vec3 vPosition;
 uniform mat4 projectionMatrix;
 out vec2 fPosition;
-uniform vec2 resolution;
+uniform ivec2 resolution;
 void main()
 {
 	

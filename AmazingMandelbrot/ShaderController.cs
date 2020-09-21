@@ -31,6 +31,8 @@ namespace AmazingMandelbrot
         int ReverseTexHandle;
         int IntermediateFramebuffer;
         int ReverseFramebuffer;
+        int IntermediateShaderBuffer;
+        int ReverseShaderBuffer;
         float Time = 0;
         public Complex[,] CoefficientArray;
         public FinishCompute FinishEvent;
@@ -57,6 +59,11 @@ namespace AmazingMandelbrot
             ReverseTexHandle = GenerateTex("BackTexture");
             ReverseFramebuffer= GenerateFrameBuffer(ReverseTexHandle);
             IntermediateFramebuffer = GenerateFrameBuffer(IntermediateTexHandle);
+            int BufferSize = mWidth * mHeight * (sizeof(double)*4);
+
+            //Swapping these 2 lines breaks the shaderbuffers for some strange reason, i have no idea why...
+            ReverseShaderBuffer = GenerateShaderBuffer(BufferSize);
+            IntermediateShaderBuffer = GenerateShaderBuffer(BufferSize);
         }
         public static void GenreateComputeProgram()
         {
@@ -94,7 +101,19 @@ namespace AmazingMandelbrot
             GL.Uniform1(GL.GetUniformLocation(ProgramId, "reverseTex"), 0);
             GL.UniformMatrix4(GL.GetUniformLocation(ProgramId, "projectionMatrix"), false, ref projectionMatrix);
             //GL.Uniform1(GL.GetUniformLocation(ProgramId, "destTex"), IntermediateTexHandle);
-            GL.Uniform2(GL.GetUniformLocation(ProgramId, "resolution"), new Vector2(mWidth, mHeight));
+
+            GL.BindBuffer(BufferTarget.ShaderStorageBuffer, IntermediateShaderBuffer);
+            int id = GL.GetProgramResourceIndex(ProgramId, ProgramInterface.ShaderStorageBlock, "DataBlock");
+            GL.ShaderStorageBlockBinding(ProgramId, id, IntermediateShaderBuffer);
+            GL.BindBufferBase( BufferRangeTarget.ShaderStorageBuffer, id, IntermediateShaderBuffer);
+            GL.BindBuffer(BufferTarget.ShaderStorageBuffer, ReverseShaderBuffer);
+            id = GL.GetProgramResourceIndex(ProgramId, ProgramInterface.ShaderStorageBlock, "OldDataBlock");
+            GL.ShaderStorageBlockBinding(ProgramId, id, ReverseShaderBuffer);
+            GL.BindBufferBase(BufferRangeTarget.ShaderStorageBuffer, id, ReverseShaderBuffer);
+            GL.BindBuffer(BufferTarget.ShaderStorageBuffer, 0);
+            //GL.Uniform1(GL.GetUniformLocation(ProgramId, "DataBlock"), IntermediateShaderBuffer);
+
+            GL.Uniform2(GL.GetUniformLocation(ProgramId, "resolution"),mWidth, mHeight);
             GL.Uniform1(GL.GetUniformLocation(ProgramId, "Iter"), Iterations);
 
             GL.Uniform1(GL.GetUniformLocation(ProgramId, "JuliaReal"), JuliaPos.real);
@@ -133,6 +152,7 @@ namespace AmazingMandelbrot
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
             GL.UseProgram(0);
             GL.BindTexture(TextureTarget.Texture2D, 0);
+            
             FinishEvent?.Invoke();
             //Console.WriteLine(GL.GetError());
         }
@@ -143,8 +163,14 @@ namespace AmazingMandelbrot
             GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "QuaternionJulia"), QuaternionJulia ? 1 : 0);
             GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "destTex"), ImageTexHandle);
             GL.ActiveTexture(TextureUnit.Texture0);
+
+            GL.BindBuffer( BufferTarget.ShaderStorageBuffer, IntermediateShaderBuffer);
+            int id = GL.GetProgramResourceIndex(DisplayProgramId, ProgramInterface.ShaderStorageBlock, "DataBlock");
+            GL.ShaderStorageBlockBinding(DisplayProgramId, id, IntermediateShaderBuffer);
+            GL.BindBufferBase(BufferRangeTarget.ShaderStorageBuffer, id, IntermediateShaderBuffer);
+            GL.BindBuffer(BufferTarget.ShaderStorageBuffer, 0);
             //if((Time*0.3)%1<0.5)
-                //GL.BindTexture(TextureTarget.Texture2D, ReverseTexHandle);
+            //GL.BindTexture(TextureTarget.Texture2D, ReverseTexHandle);
             //else
             GL.BindTexture(TextureTarget.Texture2D, IntermediateTexHandle);
             GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "sourceTex"), 0);
@@ -152,7 +178,7 @@ namespace AmazingMandelbrot
             //GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "reverseTex"), ReverseTexHandle);
 
             GL.UniformMatrix4(GL.GetUniformLocation(DisplayProgramId, "projectionMatrix"), false, ref projectionMatrix);
-            GL.Uniform2(GL.GetUniformLocation(DisplayProgramId, "resolution"), new Vector2(mWidth, mHeight));
+            GL.Uniform2(GL.GetUniformLocation(DisplayProgramId, "resolution"), mWidth, mHeight);
 
             GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "Zoom"), Zoom);
             GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "Iter"), Iterations);
@@ -197,8 +223,9 @@ namespace AmazingMandelbrot
             GL.TexCoord2(0.0f, 1.0f); GL.Vertex2(0f, realHeight);
             GL.End();
             GL.Disable(EnableCap.Texture2D);
-
+            
             Draw2();
+            
             //Compute();
         }
         public void Draw2()
@@ -211,7 +238,18 @@ namespace AmazingMandelbrot
             GL.Uniform1(GL.GetUniformLocation(BackCopyProgramId, "sourceTex"), 0);
 
             GL.UniformMatrix4(GL.GetUniformLocation(BackCopyProgramId, "projectionMatrix"), false, ref projectionMatrix);
-            GL.Uniform2(GL.GetUniformLocation(BackCopyProgramId, "resolution"), new Vector2(mWidth, mHeight));
+            GL.Uniform2(GL.GetUniformLocation(BackCopyProgramId, "resolution"), mWidth, mHeight);
+
+            GL.BindBuffer(BufferTarget.ShaderStorageBuffer, IntermediateShaderBuffer);
+            int id = GL.GetProgramResourceIndex(BackCopyProgramId, ProgramInterface.ShaderStorageBlock, "DataBlock");
+            GL.ShaderStorageBlockBinding(BackCopyProgramId, id, IntermediateShaderBuffer);
+            GL.BindBufferBase(BufferRangeTarget.ShaderStorageBuffer, id, IntermediateShaderBuffer);
+            GL.BindBuffer(BufferTarget.ShaderStorageBuffer, ReverseShaderBuffer);
+            id = GL.GetProgramResourceIndex(BackCopyProgramId, ProgramInterface.ShaderStorageBlock, "NewDataBlock");
+            GL.ShaderStorageBlockBinding(BackCopyProgramId, id, ReverseShaderBuffer);
+            GL.BindBufferBase(BufferRangeTarget.ShaderStorageBuffer, id, ReverseShaderBuffer);
+            GL.BindBuffer(BufferTarget.ShaderStorageBuffer, 0);
+
             GL.Enable(EnableCap.Texture2D);
             GL.Color3(1.0, 1.0, 1.0);
             GL.Begin(PrimitiveType.Quads);
@@ -249,6 +287,17 @@ namespace AmazingMandelbrot
             }
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
             return frameHandle;
+        }
+        int GenerateShaderBuffer(int Size)
+        {
+            int BufferIndex = GL.GenBuffer();
+            GL.BindBuffer(BufferTarget.ShaderStorageBuffer, BufferIndex);
+            GL.BufferData(BufferTarget.ShaderStorageBuffer, Size, IntPtr.Zero, BufferUsageHint.DynamicCopy);
+            GL.BindBufferBase(BufferRangeTarget.ShaderStorageBuffer, BufferIndex, BufferIndex);
+
+            GL.BindBuffer(BufferTarget.ShaderStorageBuffer, 0);
+            return BufferIndex;
+
         }
         public void Resize(int w,int h)
         {

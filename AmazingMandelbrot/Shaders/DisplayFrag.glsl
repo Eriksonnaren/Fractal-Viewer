@@ -1,7 +1,17 @@
 #version 400
+struct DataStruct
+{
+	double IterationCount;
+	double MinDistance;
+	vec2 EndPoint;
+};
+layout(std140) buffer DataBlock
+{
+  DataStruct Data[];
+};
 in vec2 fPosition;
 out vec4 fragColor;
-uniform vec2 resolution;
+uniform ivec2 resolution;
 uniform sampler2D sourceTex;
 
 uniform double Zoom;
@@ -103,9 +113,10 @@ float GetLight(ivec2 storePos)
 {
 	dvec3 Sun = normalize(vec3(-1,-1,0.0));
 	double HeightScale = 7;
-	double H1 = HeightScale*texelFetch(sourceTex,storePos,0).x;
-	double H2 = HeightScale*texelFetch(sourceTex,storePos+ivec2(1,0),0).x;
-	double H3 = HeightScale*texelFetch(sourceTex,storePos+ivec2(0,1),0).x;
+	int index = int(storePos.y*resolution.x+storePos.x);
+	double H1 = HeightScale*Data[index].IterationCount;
+	double H2 = HeightScale*Data[index+1].IterationCount;
+	double H3 = HeightScale*Data[index+resolution.x].IterationCount;
 	dvec3 V1 = dvec3(0,0,H1);
 	dvec3 V2 = dvec3(1,0,H2);
 	dvec3 V3 = dvec3(0,1,H3);
@@ -113,11 +124,12 @@ float GetLight(ivec2 storePos)
 	return float(dot(Norm,Sun));
 }
 void main() {
+	Data[100];
 	ivec2 storePos = ivec2(fPosition);
 	vec2 position = (fPosition+vec2(0,(resolution.x-resolution.y)/2))/resolution.x;
 	vec4 InputColor = texelFetch(sourceTex,storePos,0);
-	
-	
+	int index = int(storePos.y*resolution.x+storePos.x);
+	DataStruct data = Data[index];
 	//double S = sin(Time);
 	//double C = cos(Time);
 	//C=(C*0.5+0.5)*0.3;
@@ -166,7 +178,9 @@ void main() {
 	}
 	
 	
-	float L = InputColor.x;
+	double L = data.IterationCount;
+	//double L = InputColor.x;
+	//L=0;
 	float Dist = InputColor.y;
 	vec3 Col = vec3(0,0,0);
 	
@@ -239,6 +253,15 @@ void main() {
 		{
 			float V = -0.06*log(InputColor.z);
 			Col=vec3(V*V,V,sqrt(V))*V;
+		}
+		if(Julia==1)
+		{
+			dvec2 Z = Data[index].EndPoint;
+			float s =sqrt(float(length(Z)));
+			float K = atan(float(Z.y),float(Z.x))/pi;
+			Col.r = hueValue2(K) * s;
+			Col.g = hueValue2(K + 0.33) * s;
+			Col.b = hueValue2(K + 0.66) * s;
 		}
 		//float Q = sqrt(Close);
 		//float s = 0.6366*atan(100*Q);

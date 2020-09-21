@@ -1,5 +1,20 @@
 #version 400
-uniform vec2 resolution;
+struct DataStruct
+{
+	double IterationCount;
+	double MinDistance;
+	vec2 EndPoint;
+};
+layout(std140) buffer OldDataBlock
+{
+  DataStruct OldData[];
+};
+layout(std140) buffer DataBlock
+{
+  DataStruct Data[];
+};
+
+uniform ivec2 resolution;
 uniform sampler2D reverseTex;
 in vec2 fPosition;
 out vec4 fragColor;
@@ -89,7 +104,7 @@ double logd(double a)
 	double Q = mod(a/s,1.0);
 	return L1*(1-Q)+L2*Q;
 }
-vec4 MainCompute(dvec2 C)
+vec4 MainCompute(dvec2 C,int index)
 {
 	dvec2 Z = dvec2(0);
 	if(Julia==1)
@@ -151,7 +166,7 @@ vec4 MainCompute(dvec2 C)
 		if(RR+II>100*100)
 		{
 			int Power = ArrayMaxZ-1;
-			E=3-logd(logd((length(PolynomialConstants[Power])))/(Power-1)+logd((RR+II))/2)/logd(Power);
+			E=1-logd(logd((length(PolynomialConstants[Power])))/(Power-1)+logd((RR+II))/2)/logd(Power);
 			break;
 		}
 	}
@@ -165,27 +180,30 @@ vec4 MainCompute(dvec2 C)
 	{
 		A=0;
 	}
-	return vec4(A,Dist,MinDist,1);
+	Data[index]=DataStruct(A,MinDist,vec2(Z));
+	return vec4(L,Dist,MinDist,1);
 }
 void main() {
 	ivec2 storePos = ivec2(fPosition);
 	vec2 position = (vec2(fPosition.xy)+vec2(0,(resolution.x-resolution.y)/2))/resolution.x;
-
+	int index = int(storePos.y*resolution.x+storePos.x);
 	
 	dvec2 C = position*2*Zoom-Zoom+dvec2(CameraReal,CameraImag);
 	vec4 Out;
 	if(PixelShift.x==0&&PixelShift.y==0)
 	{
-		Out = MainCompute(C);
+		Out = MainCompute(C,index);
 	}else
 	{
 		ivec2 SamplePos=storePos+PixelShift;
 		if(SamplePos.x>=0&&SamplePos.y>=0&&SamplePos.x<resolution.x&&SamplePos.y<resolution.y)
 		{
 			Out = texelFetch(reverseTex,SamplePos,0);
+			int oldIndex = int(SamplePos.y*resolution.x+SamplePos.x);
+			Data[index]=OldData[oldIndex];
 		}else
 		{
-			Out = MainCompute(C);
+			Out = MainCompute(C,index);
 		}
 	}
 	fragColor = vec4(Out.xyz,1);

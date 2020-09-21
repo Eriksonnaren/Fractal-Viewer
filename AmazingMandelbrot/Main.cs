@@ -60,7 +60,8 @@ namespace AmazingMandelbrot
             
             IterationDisplay = new GuiComponents.TextDisplay(new Rectangle(10, Y, 200, 30));
             IterationSlider = new GuiComponents.Slider(new Rectangle(10, Y+=40, 200, 30));
-            
+            IterationSlider.Value = 0.5;
+
             GuiHandler.Elements.Add(IterationSlider);
             GuiHandler.Elements.Add(IterationDisplay);
 
@@ -111,6 +112,7 @@ namespace AmazingMandelbrot
             GuiHandler.PrepareAll(this);
             MainFractalWindow.Controller.Compute();
             MinibrotButton.Controller.Compute();
+            
         }
         public void Update()
         {
@@ -125,15 +127,16 @@ namespace AmazingMandelbrot
             
             if (IterationSlider.HoldingHandle)
             {
-                double A = 10*(IterationSlider.Value - 0.5);
-                MainFractalWindow.Controller.Iterations += (int)(A*A*Math.Sign(A));
+                double A = 2*(IterationSlider.Value - 0.5);
+                MainFractalWindow.Controller.Iterations += (int)(10*A*A*Math.Sign(A));
                 if (MainFractalWindow.Controller.Iterations < 10)
                     MainFractalWindow.Controller.Iterations = 10;
                 DrawIterationDisplay();
-                MainFractalWindow.Controller.Compute();
+                
             }
-            else
+            else if(IterationSlider.Value != 0.5)
             {
+                MainFractalWindow.Controller.Compute();
                 IterationSlider.Value = 0.5;
             }
             
@@ -151,7 +154,7 @@ namespace AmazingMandelbrot
             UpdatePolynomialTextDisplay();
             if(PolynomialAnimationTimer<1)
             {
-                PolynomialAnimationTimer += 0.03;
+                PolynomialAnimationTimer += 0.02;
                 double Lerp = Beizer(PolynomialAnimationTimer);
                 double LerpNew = Lerp;
                 double LerpOld= 1- Lerp;
