@@ -3,7 +3,7 @@ struct DataStruct
 {
 	double IterationCount;
 	double MinDistance;
-	vec2 EndPoint;
+	dvec2 EndPoint;
 };
 layout(std140) buffer OldDataBlock
 {

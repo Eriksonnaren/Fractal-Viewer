@@ -4,11 +4,19 @@ using OpenTK.Graphics.OpenGL;
 using System;
 using System.Drawing;
 using System.Text;
+using OpenTK.Graphics;
 
 namespace AmazingMandelbrot
 {
     class ShaderController
     {
+        
+        struct DataStruct
+        {
+            public double IterationCount;
+            public double MinDistance;
+            public Vector2d EndPoint;
+        }
         public GuiComponents.FractalWindow fractalWindow;
         public delegate void FinishCompute();
         public int mWidth;
@@ -24,7 +32,7 @@ namespace AmazingMandelbrot
         public static int RaymarchProgramId;
         public static int DisplayProgramId2;
         public float ColorOffset = 0;
-        public float ColorScale = 1.7f;
+        public float ColorScale = 2.0f;
         const int GroupSize = 16;
         int ImageTexHandle;
         int IntermediateTexHandle;
@@ -41,8 +49,16 @@ namespace AmazingMandelbrot
         public bool QuaternionJuliaCutoff = true;
         public Point PixelShift;
         public Matrix4 projectionMatrix;
+        public Color4[] ColorPalette=new Color4[] {Color4.Orange, Color4.DarkBlue, Color4.Cyan };
+        public Color4 InteriorColor=Color.Black;
+        public float[] PalettePositions=new float[] {0,0.33f,0.66f };
+        public int PaletteSize=3;
+        public double AverageIteration;
+        int BufferExtractTimer = 0;
+        DataStruct[] Buffer;
         public ShaderController(int Width,int Height)
         {
+            
             CoefficientArray = new Complex[,] {
                 {new Complex(0, 0),new Complex(1, 0)},
                 {new Complex(0, 0),new Complex(0, 0)},
@@ -50,20 +66,21 @@ namespace AmazingMandelbrot
             };
             mWidth = Width;
             mHeight = Height;
-            
-            
-            
+            Buffer = new DataStruct[mWidth * mHeight];
+
+
             //ImageTexHandle = GenerateTex("MainImage");
-            
+
             IntermediateTexHandle = GenerateTex("IntermediateTexture");
             ReverseTexHandle = GenerateTex("BackTexture");
             ReverseFramebuffer= GenerateFrameBuffer(ReverseTexHandle);
             IntermediateFramebuffer = GenerateFrameBuffer(IntermediateTexHandle);
-            int BufferSize = mWidth * mHeight * (sizeof(double)*4);
+            int BufferSize = mWidth * mHeight * (sizeof(double)*2+sizeof(double)*2);
 
             //Swapping these 2 lines breaks the shaderbuffers for some strange reason, i have no idea why...
             ReverseShaderBuffer = GenerateShaderBuffer(BufferSize);
             IntermediateShaderBuffer = GenerateShaderBuffer(BufferSize);
+            
         }
         public static void GenreateComputeProgram()
         {
@@ -82,6 +99,7 @@ namespace AmazingMandelbrot
 
         public void Compute()
         {
+            BufferExtractTimer = 20;
             projectionMatrix = fractalWindow.projectionMatrix;
             double[] Arr = new double[CoefficientArray.GetLength(0) * CoefficientArray.GetLength(1) * 2];
             for (int i = 0; i < CoefficientArray.GetLength(0); i++)
@@ -155,10 +173,26 @@ namespace AmazingMandelbrot
             
             FinishEvent?.Invoke();
             //Console.WriteLine(GL.GetError());
+            
         }
         public void Draw()
         {
+            if(BufferExtractTimer>0)
+            {
+                BufferExtractTimer--;
+                if(BufferExtractTimer==0)
+                {
+                    GetBufferValues(IntermediateShaderBuffer, Buffer);
+                    AverageIteration = 0;
+                    for (int i = 0; i < mWidth*mHeight; i++)
+                    {
+                        AverageIteration+=Buffer[i].IterationCount;
+                    }
+                    AverageIteration /= mWidth * mHeight;
+                }
+            }
             Time += 0.1f;
+            //ColorOffset += 0.01f;
             GL.UseProgram(DisplayProgramId); 
             GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "QuaternionJulia"), QuaternionJulia ? 1 : 0);
             GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "destTex"), ImageTexHandle);
@@ -204,7 +238,17 @@ namespace AmazingMandelbrot
             GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "ArrayMaxZ"), CoefficientArray.GetLength(0));
             GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "ArrayMaxC"), CoefficientArray.GetLength(1));
             GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "CoefficientArray"), Arr.Length, Arr);
-
+            float[] ColorArr = new float[ColorPalette.Length*4];
+            for (int i = 0; i < ColorPalette.Length; i++)
+            {
+                ColorArr[4 * i] = PalettePositions[i];
+                ColorArr[4 * i+1] = ColorPalette[i].R;
+                ColorArr[4 * i+2] = ColorPalette[i].G;
+                ColorArr[4 * i+3] = ColorPalette[i].B;
+            }
+            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "ColorData"), ColorArr.Length, ColorArr);
+            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "PalleteSize"), PaletteSize);
+            GL.Uniform4(GL.GetUniformLocation(DisplayProgramId, "InteriorColor"), InteriorColor);
             //GL.DispatchCompute(mWidth / GroupSize + 1, mHeight / GroupSize + 1, 1);
 
             GL.Color3(1.0,1.0,1.0);
@@ -270,7 +314,8 @@ namespace AmazingMandelbrot
             GL.BindTexture(TextureTarget.Texture2D, texHandle);
             
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)All.Linear);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)All.Linear);GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba16f, mWidth, mHeight, 0, PixelFormat.Rgba, PixelType.Float, IntPtr.Zero);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)All.Linear);
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba16f, mWidth, mHeight, 0, PixelFormat.Rgba, PixelType.Float, IntPtr.Zero);
             GL.BindImageTexture(texHandle, texHandle, 0, false, 0, TextureAccess.WriteOnly, SizedInternalFormat.Rgba16f);
             GL.ObjectLabel(ObjectLabelIdentifier.Texture, texHandle, Name.Length, Name);
             return texHandle;
@@ -298,6 +343,19 @@ namespace AmazingMandelbrot
             GL.BindBuffer(BufferTarget.ShaderStorageBuffer, 0);
             return BufferIndex;
 
+        }
+        void GetBufferValues(int BufferIndex, DataStruct[] Arr)
+        {
+            GL.BindBuffer(BufferTarget.ShaderStorageBuffer, BufferIndex);
+            unsafe
+            {
+                fixed (DataStruct* aaPtr = Arr)
+                {
+                    IntPtr Point = new IntPtr(aaPtr);
+                    GL.GetBufferSubData(BufferTarget.ShaderStorageBuffer, IntPtr.Zero, Arr.Length * sizeof(DataStruct), Point);
+                }
+            }
+            GL.BindBuffer(BufferTarget.ShaderStorageBuffer, 0);
         }
         public void Resize(int w,int h)
         {

@@ -3,7 +3,7 @@ struct DataStruct
 {
 	double IterationCount;
 	double MinDistance;
-	vec2 EndPoint;
+	dvec2 EndPoint;
 };
 layout(std140) buffer DataBlock
 {
@@ -30,6 +30,9 @@ uniform int ArrayMaxZ;
 uniform int ArrayMaxC;
 uniform int PeriodHighlight;
 dvec2[8] PolynomialConstants;
+uniform float[32] ColorData;
+uniform int PalleteSize;
+uniform vec4 InteriorColor;
 uniform int QuaternionJulia;
 
 
@@ -43,6 +46,34 @@ float hueValue(float h)
     if (a > 1) return 1;
     else if (a < 0) return 0;
     else return a;
+}
+float Lerp(float a,float b,float t)
+{
+	return a*(1-t)+b*t;
+}
+vec3 LerpColor(vec3 a,vec3 b,float t)
+{
+	return a*(1-t)+b*t;
+}
+float Beizer(float t)
+{
+	return t*t*(3-2*t);
+}
+vec3 GetExteriorColor(float t)
+{
+	int Id1 = PalleteSize - 1;
+    int Id2 = 0;
+    while(t> ColorData[Id2*4]&& Id2< PalleteSize)
+    {
+		Id1++;
+        Id2++;
+        Id1 = (Id1%PalleteSize);
+    }
+    Id2 = Id2 % PalleteSize;
+    float LerpParameter = (mod(t- ColorData[Id1*4]+1,1)) /(mod(ColorData[Id2*4]- ColorData[Id1*4]+1,1));
+	vec3 Color1 = vec3(ColorData[Id1*4+1],ColorData[Id1*4+2],ColorData[Id1*4+3]);
+	vec3 Color2 = vec3(ColorData[Id2*4+1],ColorData[Id2*4+2],ColorData[Id2*4+3]);
+    return LerpColor(Color1, Color2, Beizer(LerpParameter));
 }
 float hueValue2(float h)
 {
@@ -181,14 +212,14 @@ void main() {
 	double L = data.IterationCount;
 	//double L = InputColor.x;
 	//L=0;
-	float Dist = InputColor.y;
-	vec3 Col = vec3(0,0,0);
+	float Dist = float(data.MinDistance);
+	vec3 Col = vec3(InteriorColor);
 	
 	if(L >0)
 	{
-		float K = (ColorOffset)  +0.05- (ColorScale * float(L)) / 200;
+		float K = ColorOffset- ColorScale * (float(L) / 200);
 		//K+=Time*0.2;
-		//K=Dist*0.03*ColorScale;
+		//K=Dist*0.03;
 		K = mod(K ,1.0);
 		float a = exp(-0.1*max(float(L)-8,0));
 		//float a =0;
@@ -197,9 +228,10 @@ void main() {
 
 		a+=GetLight(storePos)*0.3;
 
-		Col.r = a+hueValue2(K) * s;
-		Col.g = a+hueValue2(K + 0.33) * s;
-		Col.b = a+hueValue2(K + 0.66) * s;
+		Col = a+GetExteriorColor(1-K)*s;
+		//Col.r = a+hueValue2(K) * s;
+		//Col.g = a+hueValue2(K + 0.33) * s;
+		//Col.b = a+hueValue2(K + 0.66) * s;
 		//Col = FancyColor(K);
 		//Col=vec3((E+L)/100.0);
 		
@@ -252,16 +284,11 @@ void main() {
 		if(QuaternionJulia==0)
 		{
 			float V = -0.06*log(InputColor.z);
-			Col=vec3(V*V,V,sqrt(V))*V;
+			Col+=vec3(V*V,V,sqrt(V))*V;
 		}
 		if(Julia==1)
 		{
-			dvec2 Z = Data[index].EndPoint;
-			float s =sqrt(float(length(Z)));
-			float K = atan(float(Z.y),float(Z.x))/pi;
-			Col.r = hueValue2(K) * s;
-			Col.g = hueValue2(K + 0.33) * s;
-			Col.b = hueValue2(K + 0.66) * s;
+			
 		}
 		//float Q = sqrt(Close);
 		//float s = 0.6366*atan(100*Q);
@@ -269,7 +296,21 @@ void main() {
 		//r=g=b=1-s;
 
 	}
-	
+	/*dvec2 J = dvec2(0,1);
+	Z=Compute(dvec2(0));
+	for(int i =0;i<4;i++)
+	{
+		Z = Compute(Z);
+		//J=Compute(J);
+	}
+    Z-=J;
+			float s =sqrt(float(length(Z)));
+			float K = 5*atan(float(Z.y),float(Z.x))/pi;
+			vec3 Col2=vec3(0);
+			Col2.r = hueValue2(K) * s;
+			Col2.g = hueValue2(K + 0.33) * s;
+			Col2.b = hueValue2(K + 0.66) * s;
+			Col+=Col2*0.5;*/
 	if(QuaternionJulia==1)
 	{
 		vec3 BaseColor=Col;

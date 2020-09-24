@@ -13,11 +13,11 @@ namespace AmazingMandelbrot.GuiComponents
     class Slider : GuiElement
     {
         public double Value = 0;
-        public Size HandleRectangleSize;
+        public SizeF HandleRectangleSize;
         public const int Padding = 2;
         public bool HoldingHandle = false;
         double StartValue = 0;
-        public Rectangle HandleRect;
+        public RectangleF HandleRect;
         public SliderEventHandler SliderEvent;
         public delegate void SliderEventHandler(double NewValue);
         public Color HandleColor = Color.LightSlateGray;
@@ -35,12 +35,12 @@ namespace AmazingMandelbrot.GuiComponents
         float SmoothDeadZone = 5;
         float SmoothMaxSpeed = 0.004f;
         float SmoothMaxDistance = 80;
-        public Slider(Rectangle Rect, bool AllowSmoothMotion = false) : base(Rect)
+        public Slider(RectangleF Rect, bool AllowSmoothMotion = false) : base(Rect)
         {
             this.AllowSmoothMotion = AllowSmoothMotion;
             Orientation = (Rect.Width > Rect.Height) ? SliderOrientation.Horizontal : SliderOrientation.Vertical;
 
-            HandleRectangleSize = Orientation == SliderOrientation.Horizontal ? new Size(HandleLength, Rect.Height - Padding * 2) : new Size(Rect.Width - Padding * 2, HandleLength);
+            HandleRectangleSize = Orientation == SliderOrientation.Horizontal ? new SizeF(HandleLength, Rect.Height - Padding * 2) : new SizeF(Rect.Width - Padding * 2, HandleLength);
             DragEvent += Drag;
             MouseUpEvent += MouseUp;
             MouseDownEvent += MouseDown;
@@ -61,12 +61,12 @@ namespace AmazingMandelbrot.GuiComponents
             if (Orientation == SliderOrientation.Horizontal)
             {
                 int HandlePos = (int)(Value * (Rect.Width - HandleRectangleSize.Width - Padding * 2)) + Padding;
-                HandleRect = new Rectangle(HandlePos, Padding, HandleRectangleSize.Width, HandleRectangleSize.Height);
+                HandleRect = new RectangleF(HandlePos, Padding, HandleRectangleSize.Width, HandleRectangleSize.Height);
             }
             else
             {
                 int HandlePos = (int)((1 - Value) * (Rect.Height - HandleRectangleSize.Height - Padding * 2)) + Padding;
-                HandleRect = new Rectangle(Padding, HandlePos, HandleRectangleSize.Width, HandleRectangleSize.Height);
+                HandleRect = new RectangleF(Padding, HandlePos, HandleRectangleSize.Width, HandleRectangleSize.Height);
             }
             Color Border = HoldingHandle ? Color.White : Color.LightGray;
             float Padding2 = 3;

@@ -9,6 +9,7 @@ using OpenTK.Graphics.OpenGL;
 using System.Windows.Forms;
 using AmazingMandelbrot.GuiComponents;
 using System.Diagnostics;
+using OpenTK.Graphics;
 
 namespace AmazingMandelbrot
 {
@@ -22,6 +23,7 @@ namespace AmazingMandelbrot
         TextDisplay IterationDisplay;
         FractalWindow MainFractalWindow;
         FractalWindow MinibrotButton;
+        FractalWindow ColorMenuButton;
         EmptyComponent MinibrotContainer;
         bool EnableMinibrots;
         int CurrentMinibrotOrder;
@@ -45,6 +47,7 @@ namespace AmazingMandelbrot
         public static double PolynomialAnimationTimer = 1;
         CursorSystem CursorSystem;
         int ResizeTimer = 0;
+        ColorEditor ColorEditor;
         public Main(Size Size)
         {
             SetOrthographicProjection(0, 0, Size.Width, Size.Height);
@@ -65,7 +68,8 @@ namespace AmazingMandelbrot
             GuiHandler.Elements.Add(IterationSlider);
             GuiHandler.Elements.Add(IterationDisplay);
 
-            MinibrotButton = new FractalWindow(new Rectangle(10, Y += 40, 70, 70));
+            /*MinibrotButton = new FractalWindow(new Rectangle(10, Y += 40, 70, 70));
+            
             MinibrotButton.Controller.Iterations = 1000;
             MinibrotButton.Controller.Zoom = 0.00000003;
             MinibrotButton.Controller.ColorScale = 1;
@@ -74,8 +78,18 @@ namespace AmazingMandelbrot
             
             MinibrotButton.EnableInteraction = false;
             MinibrotButton.MouseDownEvent += MinibrotButtonClicked;
-            GuiHandler.Elements.Add(MinibrotButton);
-            
+            GuiHandler.Elements.Add(MinibrotButton);*/
+
+            ColorMenuButton = new FractalWindow(new Rectangle(10, Y += 40, 70, 70));
+            ColorMenuButton.Controller.CameraPos = new Complex(-0.5,0);
+            ColorMenuButton.Controller.Zoom = 1.5;
+            ColorMenuButton.Controller.ColorScale = 20;
+            ColorMenuButton.EnableInteraction = false;
+            //ColorMenuButton.Controller.ColorPalette = new Color4[] {Color4.Red,Color4.Green,Color4.Blue };
+            ColorMenuButton.MouseDownEvent += ColorMenuButtonClicked;
+            ColorMenuButton.HoverEvent += ColorMenuButtonHover;
+            GuiHandler.Elements.Add(ColorMenuButton);
+
             DrawIterationDisplay();
             /*MainFractalWindow.Controller.Iterations = 1500;
             MainFractalWindow.Controller.CameraPos.real = -0.12681960215148277;
@@ -111,11 +125,20 @@ namespace AmazingMandelbrot
             //GuiHandler.ShowAll(this);
             GuiHandler.PrepareAll(this);
             MainFractalWindow.Controller.Compute();
-            MinibrotButton.Controller.Compute();
-            
+            //MinibrotButton.Controller.Compute();
+            ColorMenuButton.Controller.Compute();
+
+            ColorEditor = new ColorEditor(new RectangleF(250,10,350,150));
+            GuiHandler.Elements.Add(ColorEditor);
+            ColorEditor.Enabled = false;
+            ColorEditor.fractalWindows.Add(MainFractalWindow);
+            ColorEditor.fractalWindows.Add(CursorSystem.JuliaWindow);
+            ColorEditor.UpdateFractalWindows();
         }
         public void Update()
         {
+            
+
             T += 0.02;
             //MainFractalWindow.Controller.ColorOffset = (MainFractalWindow.Controller.ColorOffset + 0.01f)%1;
             //JuliaWindow.Controller.JuliaPos.real = Math.Cos(T)*0.01-1.01;
@@ -257,6 +280,14 @@ namespace AmazingMandelbrot
                 
             }
             MinibrotContainer.Enabled = EnableMinibrots;
+        }
+        void ColorMenuButtonHover(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
+        {
+            ColorMenuButton.Controller.ColorOffset += 0.02f;
+        }
+        void ColorMenuButtonClicked(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
+        {
+            ColorEditor.Enabled = !ColorEditor.Enabled;
         }
         void MainWindowClick(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
         {

@@ -3,7 +3,7 @@ struct DataStruct
 {
 	double IterationCount;
 	double MinDistance;
-	vec2 EndPoint;
+	dvec2 EndPoint;
 };
 layout(std140) buffer OldDataBlock
 {
@@ -106,11 +106,16 @@ double logd(double a)
 }
 vec4 MainCompute(dvec2 C,int index)
 {
+	//double d = 2.3*length(C);
+	//C *=(1+1/(pow(float(d),4)));
+	
 	dvec2 Z = dvec2(0);
+	//dvec2 W = dvec2(0);
 	if(Julia==1)
 	{
 		Z=C;
 		C= dvec2(JuliaReal,JuliaImag);
+		
 	}
 	int L;
 	double E = 0;
@@ -146,8 +151,8 @@ vec4 MainCompute(dvec2 C,int index)
 		//DC=Mult(DC,ComputeDerivativeZ(Z))+ComputeDerivativeC(Z);
 		//Z=Compute(Z);
 
-		dvec2 DerZ=PolynomialConstants[ArrayMax]*ArrayMax;
-		dvec2 DerC=PolynomialConstantsDerC[ArrayMax];
+		//dvec2 DerZ=PolynomialConstants[ArrayMax]*ArrayMax;
+		//dvec2 DerC=PolynomialConstantsDerC[ArrayMax];
 		dvec2 NewZ=PolynomialConstants[ArrayMax];
 		for(int i =ArrayMaxZ-2;i>=1;i--)
 		{
@@ -157,15 +162,29 @@ vec4 MainCompute(dvec2 C,int index)
 		}
 		//DC=Mult(DC,DerZ)+Mult(Z,DerC)+PolynomialConstantsDerC[0];
 		Z=Mult(Z,NewZ)+PolynomialConstants[0];
-		
-		
+		//Z = Mult(Z+2*W,Z)+0.3*Div(W-C,Z+1)+Mult(Mult(Mult(C,C-W),C),C+W);
+		//Z=Z-Div(Sin(Z),Cos(Z))+C;
 		double RR = Z.x*Z.x;
 		double II = Z.y*Z.y;
 		//double M = 0.05*(RR*II)/((RR+II)*sqrt(RR+II));
 		MinDist=min(MinDist,RR+II);
 		if(RR+II>100*100)
 		{
-			int Power = ArrayMaxZ-1;
+			double Bail = 100;
+			int Power = 2;
+
+			double CurrentZ = Bail*Bail;
+			double Change = CurrentZ*length(PolynomialConstants[2]);
+			for(int i =3;i<ArrayMaxZ;i++)
+			{
+				CurrentZ = CurrentZ*Bail;
+				double A = CurrentZ*length(PolynomialConstants[i]);
+				if(A>Change)
+				{
+					Change=A;
+					Power=i;
+				}
+			}
 			E=1-logd(logd((length(PolynomialConstants[Power])))/(Power-1)+logd((RR+II))/2)/logd(Power);
 			break;
 		}
@@ -174,14 +193,18 @@ vec4 MainCompute(dvec2 C,int index)
 	float dr = float(length(DC));
 	
 	float Dist = log(0.5*(r*log(r)/dr));
-	Dist =1;
+	//Dist =1;
 	double A = max(L+E,1);
 	if(L==Iter)
 	{
 		A=0;
+		
+	}else
+	{
+		//MinDist=Dist;
 	}
 	Data[index]=DataStruct(A,MinDist,vec2(Z));
-	return vec4(L,Dist,MinDist,1);
+	return vec4(L,0,MinDist,1);
 }
 void main() {
 	ivec2 storePos = ivec2(fPosition);
