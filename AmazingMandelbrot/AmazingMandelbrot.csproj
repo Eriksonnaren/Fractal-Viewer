@@ -63,8 +63,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AutoZoomController.cs" />
     <Compile Include="BigDecimal.cs" />
     <Compile Include="Complex.cs" />
+    <Compile Include="CursorController.cs" />
     <Compile Include="CursorSystem.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
@@ -79,6 +81,7 @@
     <Compile Include="GuiComponents\Slider.cs" />
     <Compile Include="GuiElement.cs" />
     <Compile Include="GuiHandler.cs" />
+    <Compile Include="JuliaCursorSystem.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="MinibrotFinder.cs" />
     <Compile Include="PolynomialParser.cs" />

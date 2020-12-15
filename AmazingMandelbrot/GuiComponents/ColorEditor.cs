@@ -24,13 +24,14 @@ namespace AmazingMandelbrot.GuiComponents
         Vector2 MainCirclePosition;
         const int CircleSteps = 180;
         const float NodeWidth = 0.1f;
-        float RotationSpeed = 0;
+        public float RotationSpeed = 0;
         bool IsDraggingCircle=false;
         bool IsHoldingCircle = false;
         bool IsHoldingNode = false;
         int SelectedIndex = -1;
         Slider[] ColorSliders = new Slider[3];
         Slider ColorScaleSlider;
+        public Slider DotStrengthSlider;
         public float ColorScale;
         public List<FractalWindow> fractalWindows=new List<FractalWindow>();
         public ColorEditor(RectangleF Rect) : base(Rect)
@@ -68,6 +69,10 @@ namespace AmazingMandelbrot.GuiComponents
                 ColorSliders[i].BackgroundColor = Colors[i];
                 ChildElements.Add(ColorSliders[i]);
             }
+            X += 140 + Padding;
+            DotStrengthSlider = new Slider(new RectangleF(X, Padding,30 , Rect.Height - Padding * 2));
+            DotStrengthSlider.Value = 1;
+            ChildElements.Add(DotStrengthSlider);
             ColorScaleSlider.SliderEvent += ScaleSliderChanged;
         }
         public override void Update()
@@ -90,7 +95,7 @@ namespace AmazingMandelbrot.GuiComponents
             }
             
         }
-        void RotatePalette(float Amount)
+        public void RotatePalette(float Amount)
         {
             for (int i = 0; i < CurrentPaletteSize; i++)
             {
@@ -259,7 +264,7 @@ namespace AmazingMandelbrot.GuiComponents
         void MouseDown(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
         {
             IsHoldingNode = false;
-            RotationSpeed = 0;
+
             Vector2 Pos = new Vector2(MousePos.X, MousePos.Y)- MainCirclePosition;
             if (Pos.LengthSquared < InnerCircleRadius * InnerCircleRadius)
             {
@@ -270,6 +275,8 @@ namespace AmazingMandelbrot.GuiComponents
             else
             if (Pos.LengthSquared < MainCircleOuterRadius * MainCircleOuterRadius)
             {
+                
+                RotationSpeed = 0;
                 bool HasRemoved = false;
                 for (int i = 0; i < CurrentPaletteSize; i++)
                 {
@@ -346,7 +353,8 @@ namespace AmazingMandelbrot.GuiComponents
         }
         void MouseHover(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
         {
-            if(ButtonStatus != MouseButtons.None&& !IsDraggingCircle)
+            Vector2 Pos = new Vector2(MousePos.X, MousePos.Y) - MainCirclePosition;
+            if (ButtonStatus != MouseButtons.None&& !IsDraggingCircle&& Pos.LengthSquared < MainCircleOuterRadius * MainCircleOuterRadius)
             {
                 RotationSpeed = 0;
             }

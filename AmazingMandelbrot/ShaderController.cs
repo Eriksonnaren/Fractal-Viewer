@@ -42,6 +42,9 @@ namespace AmazingMandelbrot
         int IntermediateShaderBuffer;
         int ReverseShaderBuffer;
         float Time = 0;
+        public float Angle = 0;
+        public float OldAngle = 0;
+        public bool UseOldAngle = false;
         public Complex[,] CoefficientArray;
         public FinishCompute FinishEvent;
         public int PeriodHighlight=0;
@@ -56,6 +59,11 @@ namespace AmazingMandelbrot
         public double AverageIteration;
         int BufferExtractTimer = 0;
         DataStruct[] Buffer;
+        public Complex IterationPoint=new Complex(0,0);
+        bool UpdateBackgroundTexture = true;
+        public float CenterDotStrength = 0.8f;
+        public Complex FinalDotPosition = new Complex(0,0);
+        public float FinalDotStrength = 0.0f;
         public ShaderController(int Width,int Height)
         {
             
@@ -97,8 +105,9 @@ namespace AmazingMandelbrot
             RaymarchProgramId = SetupFragProgram(Encoding.Default.GetString(Resources.BackCopyVert), Encoding.Default.GetString(Resources.RaymarchFrag));
         }
 
-        public void Compute()
+        public void Compute(bool updateBackgroundTexture = true)
         {
+            UpdateBackgroundTexture = updateBackgroundTexture;
             BufferExtractTimer = 20;
             projectionMatrix = fractalWindow.projectionMatrix;
             double[] Arr = new double[CoefficientArray.GetLength(0) * CoefficientArray.GetLength(1) * 2];
@@ -154,6 +163,11 @@ namespace AmazingMandelbrot
                 GL.Uniform1(GL.GetUniformLocation(ComputeProgramId, "Zoom"), Zoom);
                 GL.Uniform1(GL.GetUniformLocation(ComputeProgramId, "CameraReal"), CameraPos.real);
                 GL.Uniform1(GL.GetUniformLocation(ComputeProgramId, "CameraImag"), CameraPos.imag);
+                GL.Uniform1(GL.GetUniformLocation(ComputeProgramId, "Angle"),Angle);
+                
+                GL.Uniform1(GL.GetUniformLocation(ComputeProgramId, "UseOldAngle"), UseOldAngle ? 1 : 0);
+                GL.Uniform1(GL.GetUniformLocation(ComputeProgramId, "OldAngle"), OldAngle);
+                
             }
             //GL.DispatchCompute(mWidth / GroupSize + 1, mHeight / GroupSize + 1, 1); // width * height threads in blocks of 16^2
             //GL.MemoryBarrier(MemoryBarrierFlags.AllBarrierBits);
@@ -172,8 +186,6 @@ namespace AmazingMandelbrot
             GL.BindTexture(TextureTarget.Texture2D, 0);
             
             FinishEvent?.Invoke();
-            //Console.WriteLine(GL.GetError());
-            
         }
         public void Draw()
         {
@@ -249,6 +261,12 @@ namespace AmazingMandelbrot
             GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "ColorData"), ColorArr.Length, ColorArr);
             GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "PalleteSize"), PaletteSize);
             GL.Uniform4(GL.GetUniformLocation(DisplayProgramId, "InteriorColor"), InteriorColor);
+
+            Vector2 V = new Vector2((float)IterationPoint.real, (float)IterationPoint.imag);
+            GL.Uniform2(GL.GetUniformLocation(DisplayProgramId, "IterationPoint"), ref V); 
+            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "CenterDotStrength"), CenterDotStrength);
+            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "FinalDotStrength"), FinalDotStrength);
+            GL.Uniform2(GL.GetUniformLocation(DisplayProgramId, "FinalDotPosition"), FinalDotPosition.real, FinalDotPosition.imag);
             //GL.DispatchCompute(mWidth / GroupSize + 1, mHeight / GroupSize + 1, 1);
 
             GL.Color3(1.0,1.0,1.0);
@@ -257,18 +275,20 @@ namespace AmazingMandelbrot
             //GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
 
             GL.Enable(EnableCap.Texture2D);
-
-            GL.Begin(PrimitiveType.Quads);
-            float realWidth = mWidth;
-            float realHeight = mHeight;
-            GL.TexCoord2(0.0f, 0.0f); GL.Vertex2(0f, 0f);
-            GL.TexCoord2(1.0f, 0.0f); GL.Vertex2(realWidth, 0f);
-            GL.TexCoord2(1.0f, 1.0f); GL.Vertex2(realWidth, realHeight);
-            GL.TexCoord2(0.0f, 1.0f); GL.Vertex2(0f, realHeight);
-            GL.End();
+            
+            
+                GL.Begin(PrimitiveType.Quads);
+                float realWidth = mWidth;
+                float realHeight = mHeight;
+                GL.TexCoord2(0.0f, 0.0f); GL.Vertex2(0f, 0f);
+                GL.TexCoord2(1.0f, 0.0f); GL.Vertex2(realWidth, 0f);
+                GL.TexCoord2(1.0f, 1.0f); GL.Vertex2(realWidth, realHeight);
+                GL.TexCoord2(0.0f, 1.0f); GL.Vertex2(0f, realHeight);
+                GL.End();
+            
             GL.Disable(EnableCap.Texture2D);
             
-            Draw2();
+                Draw2();
             
             //Compute();
         }
@@ -296,12 +316,15 @@ namespace AmazingMandelbrot
 
             GL.Enable(EnableCap.Texture2D);
             GL.Color3(1.0, 1.0, 1.0);
-            GL.Begin(PrimitiveType.Quads);
-            GL.TexCoord2(0.0f, 0.0f); GL.Vertex2(0f, 0f);
-            GL.TexCoord2(1.0f, 0.0f); GL.Vertex2(mWidth, 0f);
-            GL.TexCoord2(1.0f, 1.0f); GL.Vertex2(mWidth, mHeight);
-            GL.TexCoord2(0.0f, 1.0f); GL.Vertex2(0f, mHeight);
-            GL.End();
+            if (UpdateBackgroundTexture)
+            {
+                GL.Begin(PrimitiveType.Quads);
+                GL.TexCoord2(0.0f, 0.0f); GL.Vertex2(0f, 0f);
+                GL.TexCoord2(1.0f, 0.0f); GL.Vertex2(mWidth, 0f);
+                GL.TexCoord2(1.0f, 1.0f); GL.Vertex2(mWidth, mHeight);
+                GL.TexCoord2(0.0f, 1.0f); GL.Vertex2(0f, mHeight);
+                GL.End();
+            }
             GL.Disable(EnableCap.Texture2D);
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
             GL.UseProgram(0);
@@ -361,9 +384,15 @@ namespace AmazingMandelbrot
         {
             mWidth = w;
             mHeight = h;
+            Buffer = new DataStruct[mWidth * mHeight];
+            int BufferSize = mWidth * mHeight * (sizeof(double) * 2 + sizeof(double) * 2);
             GL.DeleteTexture(ImageTexHandle);
             GL.DeleteTexture(IntermediateTexHandle);
             GL.DeleteTexture(ReverseTexHandle);
+            GL.DeleteBuffer(ReverseShaderBuffer);
+            GL.DeleteBuffer(IntermediateShaderBuffer);
+            ReverseShaderBuffer = GenerateShaderBuffer(BufferSize);
+            IntermediateShaderBuffer = GenerateShaderBuffer(BufferSize);
             ImageTexHandle = GenerateTex("MainImage");
             IntermediateTexHandle = GenerateTex("IntermediateTexture");
             ReverseTexHandle = GenerateTex("BackTexture");

@@ -1,4 +1,4 @@
-#version 400
+#version 430
 struct DataStruct
 {
 	double IterationCount;
@@ -34,8 +34,10 @@ uniform float[32] ColorData;
 uniform int PalleteSize;
 uniform vec4 InteriorColor;
 uniform int QuaternionJulia;
-
-
+uniform vec2 IterationPoint;
+uniform float CenterDotStrength;
+uniform float FinalDotStrength;
+uniform dvec2 FinalDotPosition;
 
 float hueValue(float h)
 {
@@ -140,6 +142,14 @@ dvec2 ComputeDerivative(dvec2 Z)
 	}
 	return NewZ;
 }
+double logd(double a)
+{
+	const double s=0.000000000001;
+	double L1 = log(float(a));
+	double L2 = log(float(a+s));
+	double Q = mod(a/s,1.0);
+	return L1*(1-Q)+L2*Q;
+}
 float GetLight(ivec2 storePos)
 {
 	dvec3 Sun = normalize(vec3(-1,-1,0.0));
@@ -226,9 +236,14 @@ void main() {
 		float s = 0.85*(1-a*0.2);
 		a*=0.2;
 
-		a+=GetLight(storePos)*0.3;
+		
 
 		Col = a+GetExteriorColor(1-K)*s;
+
+		//Col *=(GetLight(storePos)*0.5+1);
+
+		//Col = vec3(GetLight(storePos),0,-GetLight(storePos))*0.5;
+		Col +=(GetLight(storePos)*0.3);
 		//Col.r = a+hueValue2(K) * s;
 		//Col.g = a+hueValue2(K + 0.33) * s;
 		//Col.b = a+hueValue2(K + 0.66) * s;
@@ -283,8 +298,16 @@ void main() {
 		}
 		if(QuaternionJulia==0)
 		{
-			float V = -0.06*log(InputColor.z);
-			Col+=vec3(V*V,V,sqrt(V))*V;
+			if(FinalDotStrength==0)
+			{
+				float V = float(-0.06*logd(data.MinDistance))*CenterDotStrength;
+				Col+=vec3(V*V,V,sqrt(V))*V;
+			}else
+			{
+				float V = float(-0.12*logd(length(data.EndPoint-FinalDotPosition)))*CenterDotStrength;
+				Col+=vec3(V*V,V,sqrt(V))*V;
+			}
+
 		}
 		if(Julia==1)
 		{
@@ -296,21 +319,24 @@ void main() {
 		//r=g=b=1-s;
 
 	}
-	/*dvec2 J = dvec2(0,1);
-	Z=Compute(dvec2(0));
-	for(int i =0;i<4;i++)
+	dvec2 J = dvec2(0,1);
+	dvec2 Z1 = dvec2(0);
+	dvec2 Z2 = IterationPoint;
+	/*for(int i =0;i<40;i++)
 	{
-		Z = Compute(Z);
-		//J=Compute(J);
+		Z1 = Compute(Z1);
+		//Z2 = Mult(Z2,Z2)+C+vec2(Zoom,0)/resolution;
 	}
-    Z-=J;
-			float s =sqrt(float(length(Z)));
-			float K = 5*atan(float(Z.y),float(Z.x))/pi;
+	Z=(Z1-IterationPoint);
+    //Z-=J;
+			float s =1-exp(-5*float(length(Z)));
+			s=1;
+			float K = 0.5*atan(float(Z.y),float(Z.x))/pi;
 			vec3 Col2=vec3(0);
 			Col2.r = hueValue2(K) * s;
 			Col2.g = hueValue2(K + 0.33) * s;
 			Col2.b = hueValue2(K + 0.66) * s;
-			Col+=Col2*0.5;*/
+			Col=LerpColor(Col,Col2,0.7);*/
 	if(QuaternionJulia==1)
 	{
 		vec3 BaseColor=Col;
@@ -335,7 +361,6 @@ void main() {
 	}*/
 
 	fragColor=vec4(Col,1.0f);//+vec4(0.1,0,0,0);//+texelFetch(sourceTex,storePos,0);
-	//fragColor = InputColor;
 	//fragColor=texture2D(sourceTex,fPosition/resolution);
 	//imageStore(destTex, storePos, vec4(Col,1.0f));
 	//imageStore(reverseTex, storePos, InputColor);

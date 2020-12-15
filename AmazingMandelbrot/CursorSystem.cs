@@ -11,45 +11,61 @@ using System.Windows.Forms;
 
 namespace AmazingMandelbrot
 {
-    class CursorSystem
+    class MainCursorSystem
     {
-        public bool CursorActive;
-        public bool CursorPinned;
+        public CursorController mainController;
+        public CursorController juliaController;
         public bool JuliaActive;
-        public bool PeriodActive;
-        public bool MenuActive;
-        public Complex CursorWorldPosition;
-        public PointF CursorPosition;
-        public EmptyComponent CursorElement;
-        public EmptyComponent PinButton;
+        public bool OrbitActive;
+        public bool JuliaOrbitActive;
+
         public FractalWindow JuliaButton;
+        public FractalWindow OrbitButton;
+
+        public FractalWindow JuliaOrbitButton;
+        public FractalWindow JuliaPeriodButton;
+
         public FractalWindow Julia3dButton;
         public FractalWindow Julia3dCutoffButton;
-        public FractalWindow PeriodButton;
-        public FractalWindow OrbitButton;
-        GuiElement[] AllButtons = new GuiElement[4];
+       
+        //public FractalWindow OrbitButton;
         FractalWindow MainWindow;
-        const float CursorSize = 20;
-        const float ButtonSize = 50;
-        const float ButtonDistance = 70;
-        Main.Timer TeleportTimer = new Main.Timer(10);
-        Main.Timer ExtendTimer = new Main.Timer(10);
-        PointF TargetCursorPosition;
-        PointF OldCursorPosition;
+        
+        
         FractalMath FractalMath = new FractalMath();
         public FractalWindow JuliaWindow;
         const float JuliaSizeBoxSize=40;
         EmptyComponent JuliaSizeBox;
         float JuliaWindowSize=500;
-        public CursorSystem(FractalWindow mainWindow)
+        public MainCursorSystem(FractalWindow mainWindow)
         {
             MainWindow = mainWindow;
-            CursorElement = new EmptyComponent(new RectangleF(0,0, CursorSize, CursorSize));
-            mainWindow.ChildElements.Add(CursorElement);
-            AllButtons[0] = PinButton = new EmptyComponent(new RectangleF(0, 0, ButtonSize, ButtonSize));
-            AllButtons[1] = JuliaButton = new FractalWindow(new RectangleF(0, 0, ButtonSize, ButtonSize));
-            AllButtons[2] = PeriodButton = new FractalWindow(new RectangleF(0, 0, ButtonSize, ButtonSize));
-            AllButtons[3] = OrbitButton = new FractalWindow(new RectangleF(0, 0, ButtonSize, ButtonSize));
+            float size = CursorController.ButtonSize;
+            JuliaWindow = new FractalWindow(new RectangleF(MainWindow.Rect.Width - JuliaWindowSize - 20, 20, JuliaWindowSize, JuliaWindowSize));
+            //AllButtons[0] = PinButton = new EmptyComponent(new RectangleF(0, 0, ButtonSize, ButtonSize));
+            JuliaButton = new FractalWindow(new RectangleF(0, 0, size, size));
+            OrbitButton = new FractalWindow(new RectangleF(0, 0, size, size));
+            mainController = new CursorController(mainWindow, 
+                new GuiElement[] {
+                    JuliaButton,
+                    OrbitButton
+                });
+            JuliaPeriodButton = new FractalWindow(new RectangleF(0, 0, size, size));
+            JuliaOrbitButton = new FractalWindow(new RectangleF(0, 0, size, size));
+            juliaController = new CursorController(JuliaWindow,
+                new GuiElement[]
+                {
+                    JuliaPeriodButton,
+                    JuliaOrbitButton
+                }
+                );
+            mainController.MenuUpdatedEvent += MenuUpdated;
+            mainController.PositionEvent += CursorChanged;
+            juliaController.MenuUpdatedEvent += JuliaMenuUpdated;
+            juliaController.PositionEvent += JuliaCursorChanged;
+            
+
+            //AllButtons[3] = OrbitButton = new FractalWindow(new RectangleF(0, 0, ButtonSize, ButtonSize));
             JuliaButton.Controller.Iterations = 1000;
             JuliaButton.Controller.Zoom = 0.14;
             JuliaButton.Controller.ColorScale = 2;
@@ -57,36 +73,41 @@ namespace AmazingMandelbrot
             JuliaButton.Controller.Julia = true;
             JuliaButton.Controller.JuliaPos = new Complex(-0.16037822, -1.0375242);
             JuliaButton.EnableInteraction = false;
-            
-            
-            
 
-            PeriodButton.Controller.CameraPos = new Complex(-0.48125,-0.534114583333333);
-            PeriodButton.Controller.Zoom = 0.1;
-            PeriodButton.Controller.PeriodHighlight = 5;
-            PeriodButton.EnableInteraction = false;
-            
+
+            OrbitButton.Controller.CameraPos = new Complex(-0.0978, -0.747457);
+            OrbitButton.Controller.Zoom = 0.15;
+            OrbitButton.Controller.PeriodHighlight = 5;
+            OrbitButton.OrbitActive = true;
+            OrbitButton.OrbitPosition= new Complex(-0.03137, -0.79095);
+            OrbitButton.OrbitScale = 0.5f;
+            OrbitButton.StrippleScale = 1;
             OrbitButton.EnableInteraction = false;
-            for (int i = 0; i < AllButtons.Length; i++)
-            {
-                AllButtons[i].Enabled = false;
-                mainWindow.ChildElements.Add(AllButtons[i]);
-                AllButtons[i].FrameColor = Color.Red;
-            }
-            CursorElement.Enabled = false;
-            CursorElement.DrawFrame = false;
-            CursorElement.DragEvent += CursorDragged;
-            CursorElement.LateDraw += CursorLateDraw;
-            ExtendTimer.FinishedEvent += ExtendTimerFinish;
-            ExtendTimer.Tick += ExtendTimerTick;
-            TeleportTimer.FinishedEvent+= TeleportTimerFinish;
-            TeleportTimer.Tick += TeleportTimerTick;
-            CursorElement.MouseDownEvent += CursorClick;
-            MainWindow.Controller.FinishEvent += MainComputed;
 
-            PeriodButton.ClickEvent += PeriodClick;
-            JuliaButton.ClickEvent += JuliaClick;
-            JuliaWindow = new FractalWindow(new RectangleF(MainWindow.Rect.Width- JuliaWindowSize-20,20, JuliaWindowSize, JuliaWindowSize));
+            JuliaOrbitButton.EnableInteraction = false;
+            JuliaOrbitButton.Controller.Zoom = 1.0;
+            JuliaOrbitButton.OrbitActive = true;
+            JuliaOrbitButton.Controller.CameraPos = new Complex(-0.3, -0.3);
+            JuliaOrbitButton.Controller.JuliaPos = new Complex(-0.504455304069502, -0.562767203932328);
+            JuliaOrbitButton.Controller.Julia = true;
+            JuliaOrbitButton.OrbitScale = 0.5f;
+            JuliaOrbitButton.StrippleScale = 1;
+            JuliaOrbitButton.Controller.CenterDotStrength = 0;
+
+            JuliaPeriodButton.EnableInteraction = false;
+            JuliaPeriodButton.Controller.JuliaPos = new Complex(-0.153974876797236, -1.03769787591661);
+            JuliaPeriodButton.Controller.Julia = true;
+            JuliaPeriodButton.Controller.Zoom = 0.117;
+            JuliaPeriodButton.Controller.FinalDotStrength = 0.001f;
+            JuliaPeriodButton.fractalMath.CoefficientArray = JuliaWindow.Controller.CoefficientArray;
+            JuliaPeriodButton.fractalMath.SetCoefficients(JuliaPeriodButton.Controller.JuliaPos);
+            Complex Z = new Complex(0,0);
+            for (int i = 0; i < JuliaPeriodButton.Controller.Iterations; i++)
+            {
+                Z = JuliaPeriodButton.fractalMath.Compute(Z);
+            }
+            JuliaPeriodButton.Controller.FinalDotPosition = Z;
+
             //JuliaWindow = new FractalWindow(new RectangleF(20, 20, JuliaWindowSize, JuliaWindowSize));
             JuliaWindow.Controller.Julia = true;
             JuliaWindow.Enabled = false;
@@ -98,11 +119,11 @@ namespace AmazingMandelbrot
             JuliaSizeBox.LateDraw += JuliaResizeLateDraw;
             JuliaSizeBox.DrawFrame = false;
 
-            Julia3dButton = new FractalWindow(new RectangleF(5, 5, ButtonSize, ButtonSize));
+            /*Julia3dButton = new FractalWindow(new RectangleF(5, 5, size, size));
             Julia3dButton.Controller.Julia=true;
             Julia3dButton.Controller.QuaternionJulia = true;
 
-            Julia3dCutoffButton = new FractalWindow(new RectangleF(10 + ButtonSize, 5, ButtonSize, ButtonSize));
+            Julia3dCutoffButton = new FractalWindow(new RectangleF(10 + size, 5, size, size));
             Julia3dCutoffButton.Controller.Julia = true;
             Julia3dCutoffButton.Controller.QuaternionJulia = true;
             Julia3dCutoffButton.Controller.QuaternionJuliaCutoff = false;
@@ -110,73 +131,77 @@ namespace AmazingMandelbrot
             JuliaWindow.ChildElements.Add(Julia3dButton);
             JuliaWindow.ChildElements.Add(Julia3dCutoffButton);
             Julia3dButton.ClickEvent += Julia3dClick;
-            Julia3dCutoffButton.ClickEvent += JuliaCutoffClick;
+            Julia3dCutoffButton.ClickEvent += JuliaCutoffClick;*/
 
             //CursorWorldPosition = new Complex(-Math.PI/4, -0.15);
             //CursorPosition = MainWindow.GetScreenFromWorld(CursorWorldPosition);
             //CursorActive = true;
             //CursorElement.Enabled = true;
+            
+
+            OrbitButton.MouseDownEvent += OrbitClick;
+            JuliaButton.MouseDownEvent += JuliaClick;
+
+            JuliaOrbitButton.MouseDownEvent += JuliaOrbitClick;
+            JuliaPeriodButton.MouseDownEvent += JuliaPeriodClick;
         }
         public void Update()
         {
             FractalMath.CoefficientArray = MainWindow.Controller.CoefficientArray;
-            ExtendTimer.Update();
-            TeleportTimer.Update();
+            mainController.Update();
+            juliaController.Update();
             
+
+        }
+        void FinalDotUpdate()
+        {
+            if (juliaController.ButtonsActive[0])
+            {
+                JuliaWindow.fractalMath.CoefficientArray = JuliaWindow.Controller.CoefficientArray;
+                JuliaWindow.fractalMath.SetCoefficients(JuliaWindow.Controller.JuliaPos);
+                Complex Z = juliaController.CursorWorldPosition;
+                for (int i = 0; i < JuliaWindow.Controller.Iterations; i++)
+                {
+                    Z = JuliaWindow.fractalMath.Compute(Z);
+                }
+                JuliaWindow.Controller.FinalDotPosition = Z;
+                JuliaWindow.Controller.FinalDotStrength = 0.001f;
+            }
+            else
+            {
+                JuliaWindow.Controller.FinalDotStrength = 0;
+            }
+        }
+        public void MenuUpdated()
+        {
+            JuliaButton.Controller.Compute();
+            OrbitButton.Controller.Compute();
+        }
+        public void CursorChanged()
+        {
+            UpdateJulia();
+            MainWindow.OrbitActive = OrbitActive;
+            MainWindow.OrbitPosition = mainController.CursorWorldPosition;
+        }
+        public void JuliaMenuUpdated()
+        {
+            JuliaPeriodButton.Controller.Compute();
+            JuliaOrbitButton.Controller.Compute();
+        }
+        public void JuliaCursorChanged()
+        {
+            
+            JuliaWindow.OrbitActive = JuliaOrbitActive;
+            JuliaWindow.OrbitPosition = juliaController.CursorWorldPosition;
+            FinalDotUpdate();
         }
         public void ComputeAll()
         {
-            
-        }
-        public void CursorLateDraw(GuiElement sender,Main M)
-        {
-            Vector2 Center = new Vector2(CursorSize)/2;
-            float Offset1 = CursorSize / 2;
-            float Offset2 = Offset1 * 1.5f;
-            GL.LineWidth(3);
-            GL.Color3(0.5,0.8,1);
-            GL.Translate(Center.X,Center.Y,0);
-            GL.Begin(PrimitiveType.LineLoop);
-            GL.Vertex2(Offset1,0);
-            GL.Vertex2(0, Offset1);
-            GL.Vertex2(-Offset1, 0);
-            GL.Vertex2(0, -Offset1);
-            GL.End();
-            GL.Begin(PrimitiveType.Lines);
-            GL.Vertex2(Offset1, 0); GL.Vertex2(Offset2, 0);
-            GL.Vertex2(0, Offset1); GL.Vertex2(0, Offset2);
-            GL.Vertex2(-Offset1, 0);GL.Vertex2(-Offset2, 0);
-            GL.Vertex2(0, -Offset1);GL.Vertex2(0, -Offset2);
-            GL.End();
-        }
-        void CursorDragged(GuiElement Sender, PointF MousePos, PointF StartPos, PointF DeltaPos, MouseButtons ButtonStatus)
-        {
-            CursorElement.Rect.X += MousePos.X - CursorElement.Rect.Width / 2;
-            CursorElement.Rect.Y += MousePos.Y - CursorElement.Rect.Height / 2;
-            UpdateButtonPositions();
-            UpdateCursorWorldPos();
-            
-        }
-        void UpdateButtonPositions()
-        {
-            float OffsetX = CursorElement.Rect.X;
-            float OffsetY = CursorElement.Rect.Y;
-            float Offset = (CursorSize - ButtonSize) / 2;
-            float L = ExtendTimer.Value;
-            for (int i = 0; i < AllButtons.Length; i++)
-            {
-                double Angle = L * Math.PI * 0.5 + (i * Math.PI * 2) / (AllButtons.Length);
-                AllButtons[i].Rect.Location = new PointF((float)Math.Cos(Angle) * ButtonDistance * L + Offset+ OffsetX, (float)Math.Sin(Angle) * ButtonDistance * L + Offset+ OffsetY);
-            }
-        }
-        public void MainComputed()
-        {
-            if (!MenuActive)
-            {
-                CursorPosition = MainWindow.GetScreenFromWorld(CursorWorldPosition);
-                CursorElement.Rect.Location = new PointF(CursorPosition.X - CursorElement.Rect.Width / 2,
-                CursorPosition.Y - CursorElement.Rect.Height / 2);
-            }
+            JuliaButton.Controller.Compute();
+            OrbitButton.Controller.Compute();
+            JuliaPeriodButton.Controller.Compute();
+            JuliaOrbitButton.Controller.Compute();
+            JuliaWindow.Controller.Compute();
         }
         public void RepositionJulia()
         {
@@ -208,78 +233,37 @@ namespace AmazingMandelbrot
             GL.Vertex2(JuliaSizeBoxSize,JuliaSizeBoxSize);
             GL.End();
         }
-        public void UpdateCursorWorldPos()
-        {
-            CursorWorldPosition = MainWindow.GetWorldFromScreen(new PointF(
-                CursorElement.Rect.X + CursorElement.Rect.Width / 2,
-                CursorElement.Rect.Y + CursorElement.Rect.Height / 2
-                ));
-            //UpdatePeriod();
-            UpdateJulia();
-        }
+        
         public void UpdatePeriod()
         {
-            if (PeriodActive)
+            if (OrbitActive)
             {
-                MainWindow.Controller.PeriodHighlight = FractalMath.FindPeriod(CursorWorldPosition);
+                MainWindow.Controller.PeriodHighlight = FractalMath.FindPeriod(mainController.CursorWorldPosition);
             }
         }
         public void UpdateJulia()
         {
             if (JuliaActive)
             {
-                JuliaWindow.Controller.JuliaPos = CursorWorldPosition;
+                JuliaWindow.Controller.JuliaPos = mainController.CursorWorldPosition;
+                FinalDotUpdate();
                 JuliaWindow.Controller.Compute();
-                Julia3dButton.Controller.JuliaPos = CursorWorldPosition;
-                Julia3dButton.Controller.Compute();
-                Julia3dCutoffButton.Controller.JuliaPos = CursorWorldPosition;
+                //Julia3dButton.Controller.JuliaPos = mainController.CursorWorldPosition;
+                //Julia3dButton.Controller.Compute();
+                //Julia3dCutoffButton.Controller.JuliaPos = mainController.CursorWorldPosition;
                 if (JuliaWindow.Controller.QuaternionJulia)
                 {
-                    Julia3dCutoffButton.Controller.Compute();
+                    //Julia3dCutoffButton.Controller.Compute();
                 }
+                
             }
         }
-        public void RightClick(PointF Pos)
+        
+        
+        void OrbitClick(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
         {
-            if (MenuActive)
-            {
-                DisableMenu();
-            }
-            else
-            {
-                TargetCursorPosition = new PointF(Pos.X - CursorSize / 2, Pos.Y - CursorSize / 2);
-                OldCursorPosition = CursorElement.Rect.Location;
-                if (CursorElement.Enabled)
-                {
-                    TeleportTimer.Reset();
-                    TeleportTimer.Start();
-                }else
-                {
-                    CursorElement.Rect.Location = TargetCursorPosition;
-                    UpdateCursorWorldPos();
-                    EnableMenu();
-                }
-            }
-        }
-        void CursorClick(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
-        {
-            if (ButtonStatus == MouseButtons.Right)
-            {
-                if (MenuActive)
-                {
-                    DisableMenu();
-                }
-                else
-                {
-                    EnableMenu();
-                }
-            }
-        }
-        void PeriodClick(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
-        {
-            PeriodActive = !PeriodActive;
-            PeriodButton.FrameColor = PeriodActive ? Color.Green:Color.Red;
-            if (!PeriodActive)
+            OrbitActive = mainController.ButtonsActive[1];
+            if (!OrbitActive)
             {
                 MainWindow.Controller.PeriodHighlight = 0;
                 JuliaWindow.Controller.PeriodHighlight = 0;
@@ -289,14 +273,25 @@ namespace AmazingMandelbrot
                 MainWindow.Controller.PeriodHighlight = 1;
                 JuliaWindow.Controller.PeriodHighlight = 1;
             }
+            MainWindow.OrbitActive = OrbitActive;
+            MainWindow.OrbitPosition = mainController.CursorWorldPosition;
             //UpdatePeriod();
+        }
+        void JuliaOrbitClick(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
+        {
+            JuliaOrbitActive = juliaController.ButtonsActive[1];
+            JuliaWindow.OrbitActive = JuliaOrbitActive;
+            JuliaWindow.OrbitPosition = juliaController.CursorWorldPosition;
         }
         void JuliaClick(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
         {
-            JuliaActive = !JuliaActive;
-            JuliaButton.FrameColor = JuliaActive ? Color.Green : Color.Red;
+            JuliaActive = mainController.ButtonsActive[0];
             JuliaWindow.Enabled = JuliaActive;
             UpdateJulia();
+        }
+        void JuliaPeriodClick(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
+        {
+            FinalDotUpdate();
         }
         void Julia3dClick(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
         {
@@ -312,65 +307,6 @@ namespace AmazingMandelbrot
             Julia3dCutoffButton.Controller.QuaternionJuliaCutoff = !JuliaWindow.Controller.QuaternionJuliaCutoff;
             UpdateJulia();
         }
-        void EnableMenu()
-        {
-            JuliaButton.Controller.Compute();
-            PeriodButton.Controller.Compute();
-            CursorElement.Enabled = true;
-            MainWindow.EnableInteraction = false;
-            ExtendTimer.CountingBackwards = false;
-            for (int i = 0; i < AllButtons.Length; i++)
-            {
-                AllButtons[i].Enabled = true;
-            }
-            ExtendTimer.Start();
-        }
-        void DisableMenu()
-        {
-            
-            ExtendTimer.CountingBackwards = true;
-            ExtendTimer.Start();
-            
-        }
-        void ExtendTimerTick()
-        {
-            
-            UpdateButtonPositions();
-        }
-        void ExtendTimerFinish()
-        {
-            if(MenuActive)
-            {
-                MainWindow.EnableInteraction = true;
-                
-                for (int i = 0; i < AllButtons.Length; i++)
-                {
-                    AllButtons[i].Enabled = false;
-                }
-                MenuActive = false;
-                bool AnythingEnabled = PeriodActive||JuliaActive;
-                if (!AnythingEnabled)
-                {
-                    CursorElement.Enabled = false;
-                }
-            }
-            else
-            {
-                MenuActive = true;
-            }
-        }
-        void TeleportTimerTick()
-        {
-            float L = Beizer(TeleportTimer.Value);
-            CursorElement.Rect.Location = new PointF(LerpF(OldCursorPosition.X,TargetCursorPosition.X,L), LerpF(OldCursorPosition.Y, TargetCursorPosition.Y, L));
-            UpdateCursorWorldPos();
-
-        }
-        void TeleportTimerFinish()
-        {
-            //EnableMenu();
-        }
-        float LerpF(float A, float B, float T) => A * (1 - T) + B * T;
-        float Beizer(float X) => X * X * (3 - 2 * X);
+        
     }
 }

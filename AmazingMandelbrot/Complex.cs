@@ -88,9 +88,15 @@ namespace AmazingMandelbrot
         }
         public Complex Sqrt()
         {
-            double Arg = Math.Atan2(imag, real);
+
+            
             double Radius = Math.Sqrt(real * real + imag * imag);
-            return new Complex(Math.Sqrt(Radius) * Math.Cos(Arg / 2), Math.Sqrt(Radius) * Math.Sin(Arg / 2));
+            if(imag<0)
+                return new Complex(Math.Sqrt((Radius + real) / 2), -Math.Sqrt((Radius - real) / 2));
+            else
+                return new Complex(Math.Sqrt((Radius + real) / 2), Math.Sqrt((Radius - real) / 2));
+            //double Arg = Math.Atan2(imag, real);
+            //return new Complex(Math.Sqrt(Radius) * Math.Cos(Arg / 2), Math.Sqrt(Radius) * Math.Sin(Arg / 2));
         }
         public static Complex operator *(Complex c1, Complex c2)
         {
@@ -133,6 +139,10 @@ namespace AmazingMandelbrot
         public double MagSq()
         {
             return real * real + imag * imag;
+        }
+        public double Mag()
+        {
+            return Math.Sqrt(MagSq());
         }
         public static Complex Parse(string S)
         {
