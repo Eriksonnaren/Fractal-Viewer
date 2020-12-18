@@ -29,8 +29,8 @@ namespace AmazingMandelbrot
         public Vector2 CursorPosition;
         public Vector2 ClampedCursorPosition;
 
-        Main.Timer TeleportTimer = new Main.Timer(10);
-        Main.Timer ExtendTimer = new Main.Timer(10);
+        Main.Timer TeleportTimer = new Main.Timer(15);
+        Main.Timer ExtendTimer = new Main.Timer(15);
         PointF TargetCursorPosition;
         PointF OldCursorPosition;
         const float ClampDist = 25;

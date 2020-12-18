@@ -10,6 +10,7 @@ using System.Windows.Forms;
 using AmazingMandelbrot.GuiComponents;
 using System.Diagnostics;
 using OpenTK.Graphics;
+using System.Drawing.Imaging;
 
 namespace AmazingMandelbrot
 {
@@ -22,11 +23,14 @@ namespace AmazingMandelbrot
         Slider IterationSlider;
         TextDisplay IterationDisplay;
         FractalWindow MainFractalWindow;
-        FractalWindow MinibrotButton;
+        //FractalWindow MinibrotButton;
         FractalWindow ColorMenuButton;
-        EmptyComponent MinibrotContainer;
+        //EmptyComponent MinibrotContainer;
         EmptyComponent RotationCompass;
+        FractalWindow ScreenshotButton;
         FractalWindow AutoZoomButton;
+        EmptyComponent ExampleButton;
+        ExampleLocationComponent ExampleLocationComponent;
         bool EnableMinibrots;
         int CurrentMinibrotOrder;
         List<FractalWindow> MinibrotWindows = new List<FractalWindow>();
@@ -43,7 +47,6 @@ namespace AmazingMandelbrot
         Complex[,] OldCoefficientArray;
         Complex[,] DifferenceCoefficientArray;
         TextDisplay PolynomialTextDisplay;
-        TextDisplay ErrorMessageTextDisplay;
         PolynomialParser polynomialParser=new PolynomialParser();
         Timer ErrorTimer = new Timer(50);
         int TextCursorTimer;
@@ -61,6 +64,8 @@ namespace AmazingMandelbrot
         const float CompassRad = 0.25f;
         double CompassResetAngle;
         AutoZoomController AutoZoomController=new AutoZoomController();
+        float ScreenshotActive = 0;
+        FileController fileController;
         public Main(Size Size)
         {
             SetOrthographicProjection(0, 0, Size.Width, Size.Height);
@@ -69,29 +74,21 @@ namespace AmazingMandelbrot
             SF.LineAlignment = StringAlignment.Center;
             this.Size = Size;
             GuiHandler = new GuiHandler();
+            fileController = new FileController();
             MainFractalWindow = new GuiComponents.FractalWindow(new Rectangle(0, 0, Size.Width, Size.Height));
             MainFractalWindow.LateDraw += MainDrawLate;
             GuiHandler.Elements.Add(MainFractalWindow);
             int Y = 10;
-            
-            IterationDisplay = new GuiComponents.TextDisplay(new Rectangle(10, Y, 200, 30));
+            PolynomialTextDisplay = new TextDisplay(new RectangleF(10, Y, 300, 40));
+            GuiHandler.Elements.Add(PolynomialTextDisplay);
+
+            IterationDisplay = new GuiComponents.TextDisplay(new Rectangle(10, Y += 50, 200, 30));
             IterationSlider = new GuiComponents.Slider(new Rectangle(10, Y+=40, 200, 30));
             IterationSlider.Value = 0.5;
 
             GuiHandler.Elements.Add(IterationSlider);
             GuiHandler.Elements.Add(IterationDisplay);
 
-            /*MinibrotButton = new FractalWindow(new Rectangle(10, Y += 40, 70, 70));
-            
-            MinibrotButton.Controller.Iterations = 1000;
-            MinibrotButton.Controller.Zoom = 0.00000003;
-            MinibrotButton.Controller.ColorScale = 1;
-            MinibrotButton.Controller.ColorOffset = 0.9f;
-            MinibrotButton.Controller.CameraPos = new Complex(-0.12681960215148277, 0.9871247652863216);
-            
-            MinibrotButton.EnableInteraction = false;
-            MinibrotButton.MouseDownEvent += MinibrotButtonClicked;
-            GuiHandler.Elements.Add(MinibrotButton);*/
 
             ColorMenuButton = new FractalWindow(new Rectangle(10, Y += 40, 70, 70));
             ColorMenuButton.Controller.CameraPos = new Complex(-0.5,0);
@@ -102,41 +99,39 @@ namespace AmazingMandelbrot
             ColorMenuButton.MouseDownEvent += ColorMenuButtonClicked;
             ColorMenuButton.HoverEvent += ColorMenuButtonHover;
             GuiHandler.Elements.Add(ColorMenuButton);
+
             RotationCompass = new EmptyComponent(new Rectangle(10, Y += 80, 70, 70));
             RotationCompass.LateDraw += CompassDrawLate;
             RotationCompass.MouseDownEvent += CompassClicked;
             GuiHandler.Elements.Add(RotationCompass);
+
             AutoZoomButton = new FractalWindow(new Rectangle(10, Y += 80, 70, 70));
             AutoZoomButton.MouseDownEvent += AutoZoomClicked;
             AutoZoomButton.LateDraw += AutoZoomDrawLate;
             AutoZoomButton.Controller.CameraPos = new Complex(-1.20635, -0.3161);
             AutoZoomButton.Controller.Zoom = 0.0012;
-            AutoZoomButton.Controller.CenterDotStrength = 0.7f;
-
+            AutoZoomButton.Controller.CenterDotStrength = 0.5f;
+            AutoZoomButton.EnableInteraction = false;
             GuiHandler.Elements.Add(AutoZoomButton);
+
+            ScreenshotButton = new FractalWindow(new Rectangle(10, Y += 80, 70, 70));
+            ScreenshotButton.MouseDownEvent += ScreenshotButtonClicked;
+            ScreenshotButton.LateDraw += ScreenshotButtonDrawLate;
+            ScreenshotButton.Controller.CameraPos = new Complex( -1.20653,-0.316380400581047);
+            ScreenshotButton.Controller.Zoom = 0.0015;
+            ScreenshotButton.Controller.CenterDotStrength = 0.5f;
+            ScreenshotButton.EnableInteraction = false;
+            GuiHandler.Elements.Add(ScreenshotButton);
+
             DrawIterationDisplay();
-            /*MainFractalWindow.Controller.Iterations = 1500;
-            MainFractalWindow.Controller.CameraPos.real = -0.12681960215148277;
-            MainFractalWindow.Controller.CameraPos.imag = 0.9871247652863216;
-            MainFractalWindow.Controller.Zoom = 0.00000016;*/
             
             TextDisplay = new TextDisplay(new RectangleF(10, Y+=80, 100, 30));
             //GuiHandler.Elements.Add(TextDisplay);
             int H = MinibrotWindowSize + 10;
-            MinibrotContainer = new EmptyComponent(new RectangleF(10, Size.Height - H-10, Size.Width-20,H));
-            GuiHandler.Elements.Add(MinibrotContainer);
-            MinibrotContainer.Enabled = false;
-            PolynomialTextDisplay = new TextDisplay(new RectangleF(10,Size.Height-50,300,40));
-            GuiHandler.Elements.Add(PolynomialTextDisplay);
-
-            ErrorMessageTextDisplay = new TextDisplay(new RectangleF(
-                0, 
-                - PolynomialTextDisplay.Rect.Height-10,
-                PolynomialTextDisplay.Rect.Width, PolynomialTextDisplay.Rect.Height));
-            PolynomialTextDisplay.ChildElements.Add(ErrorMessageTextDisplay);
-            ErrorMessageTextDisplay.PrepareDraw();
-            ErrorMessageTextDisplay.Enabled = false;
-            ErrorMessageTextDisplay.DrawFrame = false;
+            //MinibrotContainer = new EmptyComponent(new RectangleF(10, Size.Height - H-10, Size.Width-20,H));
+            //GuiHandler.Elements.Add(MinibrotContainer);
+            //MinibrotContainer.Enabled = false;
+            
             UpdatePolynomialTextDisplay();
 
             MainCoefficientArray = polynomialParser.CoefficientArray;
@@ -146,7 +141,6 @@ namespace AmazingMandelbrot
             MainFractalWindow.MouseDownEvent += MainWindowClick;
             MainFractalWindow.MouseUpEvent += MainRelease;
 
-            ErrorTimer.FinishedEvent += ErrorTimerFinish;
             CursorSystem.JuliaWindow.Enabled = true;
             for (int i = 0; i < CursorSystem.juliaController.AllButtons.Length; i++)
             {
@@ -157,6 +151,7 @@ namespace AmazingMandelbrot
             
             CursorSystem.ComputeAll();
             AutoZoomButton.Controller.Compute();
+            ScreenshotButton.Controller.Compute();
             MainFractalWindow.Controller.Compute();
             ColorMenuButton.Controller.Compute();
             for (int i = 0; i < CursorSystem.juliaController.AllButtons.Length; i++)
@@ -171,21 +166,7 @@ namespace AmazingMandelbrot
             ColorEditor.fractalWindows.Add(MainFractalWindow);
             ColorEditor.fractalWindows.Add(CursorSystem.JuliaWindow);
             ColorEditor.UpdateFractalWindows();
-            //DifferenceCoefficientArray = new Complex[,] { { new Complex(0,0) },{ new Complex(0,0) }, {new Complex(0,0) }, { new Complex(-1, 0) } };
-            DifferenceCoefficientArray = new Complex[,] { 
-                { new Complex(0, 0) ,new Complex(0, 0) , new Complex(0, 0) , new Complex(0, 0) },
-                { new Complex(0, 0) ,new Complex(1, 0) , new Complex(0, 0) , new Complex(0, 0) },
-                { new Complex(0, 0) ,new Complex(0, 0) , new Complex(0, 0) , new Complex(0, 0) },
-                { new Complex(-1, 0) ,new Complex(0, 0) , new Complex(0, 0) , new Complex(0, 0) }
-            };
-            /*MainCoefficientArray = new Complex[,] {
-                { new Complex(0, 0) ,new Complex(1, 0) , new Complex(0, 0) , new Complex(0, 0) },
-                { new Complex(0, 0) ,new Complex(0, 0) , new Complex(0, 0) , new Complex(0, 0) },
-                { new Complex(1, 0) ,new Complex(0, 0) , new Complex(0, 0) , new Complex(0, 0) },
-                { new Complex(0, 0) ,new Complex(0, 0) , new Complex(1, 0) , new Complex(0, 0) }
-            };*/
-            //fractalMath.GetFractalFlow(MainCoefficientArray, DifferenceCoefficientArray, new Complex(-0.5, 0), 3);
-            fractalMath.FollowFractalFlow(MainCoefficientArray, DifferenceCoefficientArray,0.1, new Complex(0.5, 0), 3,out Complex Divergence);
+            
             AutoZoomController.MainWindow = MainFractalWindow;
             AutoZoomController.JuliaWindow = CursorSystem.JuliaWindow;
             AutoZoomController.ColorEditor = ColorEditor;
@@ -252,10 +233,10 @@ namespace AmazingMandelbrot
             //TextDisplay.PrepareWrite();
             //TextDisplay.gfx.DrawString(String.Format("Roots:{0}", GetMinibrots), Font, Brushes.Black, TextDisplay.Rect.Width / 2, TextDisplay.Rect.Height / 2, SF);
             //TextDisplay.PrepareDraw();
-            if(EnableMinibrots)
+            /*if(EnableMinibrots)
             {
                 UpdateMinibrots();
-            }
+            }*/
             UpdatePolynomialTextDisplay();
             if(PolynomialAnimationTimer<1)
             {
@@ -497,7 +478,16 @@ namespace AmazingMandelbrot
                 GL.End();
                 GL.PopMatrix();
             }
-            
+            if(ScreenshotActive>0)
+            {
+                if (ScreenshotActive == 1)
+                {
+                    var bmp = RenderToBitmap();
+                    fileController.SaveBitmap(bmp);
+                    Clipboard.SetImage(bmp);
+                }
+                ScreenshotActive -= 0.05f;
+            }
         }
         public void CompassDrawLate(GuiElement Sender, Main M)
         {
@@ -591,6 +581,66 @@ namespace AmazingMandelbrot
             
             GL.Disable(EnableCap.StencilTest);
         }
+        void ScreenshotButtonDrawLate(GuiElement Sender, Main M)
+        {
+            GL.PushMatrix();
+            float width = ScreenshotButton.Rect.Width;
+            float w = width * 0.4f;
+            float h = w * 0.7f;
+            float Rad = h * 0.6f;
+            int n = 20;
+            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+            GL.Enable(EnableCap.Blend);
+            GL.Color4(1.0, 1.0, 1.0, 0.15);
+            GL.Rect(0, 0, width, width);
+            GL.Translate(width / 2, width / 2, 0);
+            GL.Enable(EnableCap.StencilTest);
+            GL.StencilMask(~0);
+            GL.ClearStencil(0);
+            GL.Clear(ClearBufferMask.StencilBufferBit);
+            GL.StencilFunc(StencilFunction.Always, 1, ~0);
+            GL.StencilOp(StencilOp.Keep, StencilOp.Keep, StencilOp.Replace);
+            GL.ColorMask(false, false, false, false);
+            GL.DepthMask(false);
+            GL.Begin(PrimitiveType.Polygon);
+            for (int i = 0; i < n; i++)
+            {
+                double angle = (2 * Math.PI * i) / n;
+                Vector2d V1 = new Vector2d(Math.Cos(angle), Math.Sin(angle));
+                GL.Vertex2(V1 * Rad);
+            }
+            GL.End();
+
+            GL.ColorMask(true, true, true, true);
+            GL.DepthMask(true);
+            GL.StencilFunc(StencilFunction.Notequal, 1, ~0);
+            GL.StencilMask(0);
+            GL.Color3(ScreenshotButton.BackgroundColor);
+            GL.Rect(-width / 2, -width / 2, width/2, width/2);
+
+            GL.Color3(Color.LightGray);
+            GL.Rect(-h * 0.5, 0, h * 0.5, -h * 1.4);
+            GL.Color3(Color.White);
+            GL.Rect(-h * 0.4, h, h * 0.4, -h * 1.2);
+            
+            GL.Color3(Color.LightGray);
+            GL.Rect(-w, -h, w, h);
+            GL.Color3(ScreenshotActive>0?Color.Yellow:Color.Orange);
+            float a = h * 0.2f;
+            GL.Rect(-w+a, -h+a, -w+3*a, -h+3*a);
+            GL.Color3(Color.White);
+            GL.Begin(PrimitiveType.Polygon);
+            for (int i = 0; i < n; i++)
+            {
+                double angle = (2 * Math.PI * i) / n;
+                Vector2d V1 = new Vector2d(Math.Cos(angle), Math.Sin(angle));
+                GL.Vertex2(V1 * Rad*1.3f);
+            }
+            GL.End();
+
+            GL.Disable(EnableCap.StencilTest);
+            GL.PopMatrix();
+        }
         public void CompassClicked(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
         {
             CompassActive = !CompassActive;
@@ -653,7 +703,7 @@ namespace AmazingMandelbrot
             IterationDisplay.PrepareDraw();
         }
 
-        void MinibrotButtonClicked(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
+        /*void MinibrotButtonClicked(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
         {
             EnableMinibrots = !EnableMinibrots;
             if (EnableMinibrots)
@@ -665,7 +715,7 @@ namespace AmazingMandelbrot
                 
             }
             MinibrotContainer.Enabled = EnableMinibrots;
-        }
+        }*/
         void ColorMenuButtonHover(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
         {
             ColorMenuButton.Controller.ColorOffset += 0.02f;
@@ -687,7 +737,11 @@ namespace AmazingMandelbrot
                 }
             }
         }
-        void UpdateMinibrots()
+        void ScreenshotButtonClicked(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
+        {
+            ScreenshotActive = 1;
+        }
+        /*void UpdateMinibrots()
         {
             Complex Corner1 = MainFractalWindow.GetWorldFromScreen(new Vector2(0, 0));
             Complex Corner2 = MainFractalWindow.GetWorldFromScreen(new Vector2(Size.Width, Size.Height));
@@ -708,7 +762,7 @@ namespace AmazingMandelbrot
                 CurrentMinibrotOrder++;
             }
 
-        }
+        }*/
         public void Resize(int w, int h)
         {
             Size = new Size(w, h);
@@ -735,21 +789,17 @@ namespace AmazingMandelbrot
                 {
                     ErrorTimer.Reset();
                     ErrorTimer.Start();
-                    ErrorMessageTextDisplay.Enabled = true;
+                    //ErrorMessageTextDisplay.Enabled = true;
                     string S = polynomialParser.ErrorMessage;
-                    ErrorMessageTextDisplay.PrepareWrite();
-                    ErrorMessageTextDisplay.gfx.DrawString(S, new Font("Arial Black", 12), Brushes.Blue, PolynomialTextDisplay.Rect.Width / 2, PolynomialTextDisplay.Rect.Height / 2, SF);
-                    ErrorMessageTextDisplay.PrepareDraw();
+                    PolynomialTextDisplay.PrepareWrite();
+                    PolynomialTextDisplay.gfx.DrawString(S, new Font("Arial Black", 12), Brushes.Blue, PolynomialTextDisplay.Rect.Width / 2, PolynomialTextDisplay.Rect.Height / 2, SF);
+                    PolynomialTextDisplay.PrepareDraw();
                 }
             }
             if(K==Keys.Space)
             {
                 AutoZoomController.Start();
             }
-        }
-        void ErrorTimerFinish()
-        {
-            ErrorMessageTextDisplay.Enabled = false;
         }
         void UpdatePolynomialTextDisplay()
         {
@@ -766,9 +816,21 @@ namespace AmazingMandelbrot
                     TextCursorTimer = 0;
                 }
             }
-            PolynomialTextDisplay.PrepareWrite();
-            PolynomialTextDisplay.gfx.DrawString(S, new Font("Arial Black",12), Brushes.Black, PolynomialTextDisplay.Rect.Width / 2, PolynomialTextDisplay.Rect.Height / 2, SF);
-            PolynomialTextDisplay.PrepareDraw();
+            if (!ErrorTimer.Active)
+            {
+                PolynomialTextDisplay.PrepareWrite();
+                PolynomialTextDisplay.gfx.DrawString(S, new Font("Arial Black", 12), Brushes.Black, PolynomialTextDisplay.Rect.Width / 2, PolynomialTextDisplay.Rect.Height / 2, SF);
+                PolynomialTextDisplay.PrepareDraw();
+            }
+        }
+        public Bitmap RenderToBitmap()
+        {
+            Bitmap bitmap = new Bitmap(Size.Width, Size.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            BitmapData bData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadWrite, bitmap.PixelFormat);
+            GL.ReadPixels(0, 0, Size.Width, Size.Height, OpenTK.Graphics.OpenGL.PixelFormat.Bgra, PixelType.UnsignedByte, bData.Scan0);
+            bitmap.UnlockBits(bData);
+            bitmap.RotateFlip(RotateFlipType.RotateNoneFlipY);
+            return bitmap;
         }
         
         float Lerp(float A, float B, float T) => A * (1 - T) + T * B;

@@ -155,9 +155,9 @@ float GetLight(ivec2 storePos)
 	dvec3 Sun = normalize(vec3(-1,-1,0.0));
 	double HeightScale = 7;
 	int index = int(storePos.y*resolution.x+storePos.x);
-	double H1 = HeightScale*Data[index].IterationCount;
-	double H2 = HeightScale*Data[index+1].IterationCount;
-	double H3 = HeightScale*Data[index+resolution.x].IterationCount;
+	double H1 = HeightScale*Data[index].IterationCount;//current pixel
+	double H2 = HeightScale*Data[index+1].IterationCount;//pixel to the right
+	double H3 = HeightScale*Data[index+resolution.x].IterationCount;//pixel below
 	dvec3 V1 = dvec3(0,0,H1);
 	dvec3 V2 = dvec3(1,0,H2);
 	dvec3 V3 = dvec3(0,1,H3);

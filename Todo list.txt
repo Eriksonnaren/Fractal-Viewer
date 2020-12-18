@@ -1,0 +1,15 @@
+3d isomeric view
+*screenshot button
+reset button
+save-load functions and locations
+database of interesting stuff
+buddhabrot mode
+change strength and direction of shadow effect
+distance estimate coloring instead of iteration count
+tutorial + tooltips
+coordinate info
+cross platform?
+iteration slider for julia set window
+minibrot finder
+slider based variable in fractal function
+olc fractal

@@ -49,7 +49,7 @@ namespace AmazingMandelbrot
             int h = GLcontrol.Height;
             
             
-            T.Interval = 20;
+            T.Interval = 10;
             T.Tick += T_Tick;
             T.Start();
             //ShaderId = GL.CreateShader(ShaderType.ComputeShader);
