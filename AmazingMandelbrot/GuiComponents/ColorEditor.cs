@@ -62,7 +62,7 @@ namespace AmazingMandelbrot.GuiComponents
             HoverEvent += MouseHover;
             MouseUpEvent += MouseUp;
             float SliderHeight = (Rect.Height- Padding*4) / 3;
-            Color[] Colors = new Color[] {Color.Red,Color.Green,Color.Blue };
+            Color[] Colors = new Color[] {Color.Red,Color.Lime,Color.Blue };
             for (int i = 0; i < 3; i++)
             {
                 ColorSliders[i] = new Slider(new RectangleF(X, Padding +(SliderHeight+ Padding) *i,140, SliderHeight));

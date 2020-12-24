@@ -3,6 +3,9 @@ struct DataStruct
 {
 	double IterationCount;
 	double MinDistance;
+	double DistEstimate;
+	int RawIter;
+	int Period;
 	dvec2 EndPoint;
 };
 layout(std140) buffer OldDataBlock
@@ -39,7 +42,10 @@ uniform int MaxPeriod=20;
 uniform ivec2 PixelShift;
 
 
-
+double Sq(double x)
+{
+	return x*x;
+}
 dvec2 Mult(dvec2 A,dvec2 B)
 {
 	return dvec2(A.x*B.x-A.y*B.y,A.x*B.y+A.y*B.x);
@@ -146,9 +152,13 @@ vec4 MainCompute(dvec2 C,int index)
 	int ArrayMax = ArrayMaxZ-1;
 	double MinDist = 100;
 	double AverageDist =0;
+	dvec2 PeriodReturnPoint=dvec2(0);
+	int PeriodSampleIter=Iter-100;
+	int FoundPeriod=0;
+	double PeriodSensitivity=0.00001;
 	for(L=0;L<Iter;L++)
 	{
-
+		
 		//DC=Mult(DC,ComputeDerivativeZ(Z))+ComputeDerivativeC(Z);
 		//Z=Compute(Z);
 
@@ -164,7 +174,20 @@ vec4 MainCompute(dvec2 C,int index)
 		//DC=Mult(DC,DerZ)+Mult(Z,DerC)+PolynomialConstantsDerC[0];
 		Z=Mult(Z,NewZ)+PolynomialConstants[0];
 		//Z = Mult(Z+2*W,Z)+0.3*Div(W-C,Z+1)+Mult(Mult(Mult(C,C-W),C),C+W);
+		//Z=Cos(Z)+C;
 		//Z=Z-Div(Sin(Z),Cos(Z))+C;
+
+		if(L==PeriodSampleIter)
+		{
+			PeriodReturnPoint=Z;
+		}
+		if(Sq(Z.x-PeriodReturnPoint.x)+Sq(Z.y-PeriodReturnPoint.y)< PeriodSensitivity&&FoundPeriod==0&&L>=PeriodSampleIter)
+		{
+			FoundPeriod=L-PeriodSampleIter;
+		}
+		//PeriodReturnPoint = L==PeriodSampleIter?Z:PeriodReturnPoint;
+		//FoundPeriod = Sq(Z.x-PeriodReturnPoint.x)+Sq(Z.y-PeriodReturnPoint.y)< PeriodSensitivity&&FoundPeriod==0&&L>=PeriodSampleIter?L-PeriodSampleIter:FoundPeriod;
+
 		double RR = Z.x*Z.x;
 		double II = Z.y*Z.y;
 		//double M = 0.05*(RR*II)/((RR+II)*sqrt(RR+II));
@@ -187,6 +210,7 @@ vec4 MainCompute(dvec2 C,int index)
 				}
 			}
 			E=1-logd(logd((length(PolynomialConstants[Power])))/(Power-1)+logd((RR+II))/2)/logd(Power);
+			//E+=logd(logd((length(PolynomialConstants[Power])))/(Power-1)+logd((Bail))/2)/logd(Power);
 			break;
 		}
 	}
@@ -206,7 +230,7 @@ vec4 MainCompute(dvec2 C,int index)
 		//MinDist=Dist;
 	}
 
-	Data[index]=DataStruct(A,MinDist,vec2(Z));
+	Data[index]=DataStruct(A,MinDist,Dist,L,FoundPeriod,vec2(Z));
 	return vec4(L,0,MinDist,1);
 }
 void main() {
@@ -265,6 +289,14 @@ void main() {
 			OldData[oldIndex+1].MinDistance*Weights.y+
 			OldData[oldIndex+resolution.x].MinDistance*Weights.z+
 			OldData[oldIndex+resolution.x+1].MinDistance*Weights.w,
+
+			OldData[oldIndex].DistEstimate*Weights.x+
+			OldData[oldIndex+1].DistEstimate*Weights.y+
+			OldData[oldIndex+resolution.x].DistEstimate*Weights.z+
+			OldData[oldIndex+resolution.x+1].DistEstimate*Weights.w,
+
+			OldData[oldIndex].RawIter,
+			OldData[oldIndex].Period,
 
 			OldData[oldIndex].EndPoint*Weights.x+
 			OldData[oldIndex+1].EndPoint*Weights.y+

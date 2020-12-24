@@ -15,6 +15,9 @@ namespace AmazingMandelbrot
         {
             public double IterationCount;
             public double MinDistance;
+            public double DistEstimate;
+            public int RawIterations;
+            public int Period;
             public Vector2d EndPoint;
         }
         public GuiComponents.FractalWindow fractalWindow;
@@ -83,7 +86,7 @@ namespace AmazingMandelbrot
             ReverseTexHandle = GenerateTex("BackTexture");
             ReverseFramebuffer= GenerateFrameBuffer(ReverseTexHandle);
             IntermediateFramebuffer = GenerateFrameBuffer(IntermediateTexHandle);
-            int BufferSize = mWidth * mHeight * (sizeof(double)*2+sizeof(double)*2);
+            int BufferSize = mWidth * mHeight * (sizeof(double)*4+sizeof(double)*2);
 
             //Swapping these 2 lines breaks the shaderbuffers for some strange reason, i have no idea why...
             ReverseShaderBuffer = GenerateShaderBuffer(BufferSize);
@@ -385,7 +388,7 @@ namespace AmazingMandelbrot
             mWidth = w;
             mHeight = h;
             Buffer = new DataStruct[mWidth * mHeight];
-            int BufferSize = mWidth * mHeight * (sizeof(double) * 2 + sizeof(double) * 2);
+            int BufferSize = mWidth * mHeight * (sizeof(double) * 4 + sizeof(double) * 2);
             GL.DeleteTexture(ImageTexHandle);
             GL.DeleteTexture(IntermediateTexHandle);
             GL.DeleteTexture(ReverseTexHandle);

@@ -116,7 +116,7 @@ namespace AmazingMandelbrot
                 Parse();
             }
         }
-        void Parse()
+        public void Parse()
         {
             ErrorMessage = "";
             Success = true;

@@ -68,6 +68,8 @@ namespace AmazingMandelbrot
         FileController fileController;
         public Main(Size Size)
         {
+            GL.Enable(EnableCap.Multisample);
+            //GL.fwWindowHint(GLFW_SAMPLES, 4);
             SetOrthographicProjection(0, 0, Size.Width, Size.Height);
             
             SF.Alignment = StringAlignment.Center;
@@ -75,16 +77,24 @@ namespace AmazingMandelbrot
             this.Size = Size;
             GuiHandler = new GuiHandler();
             fileController = new FileController();
-            MainFractalWindow = new GuiComponents.FractalWindow(new Rectangle(0, 0, Size.Width, Size.Height));
+            MainFractalWindow = new FractalWindow(new Rectangle(0, 0, Size.Width, Size.Height));
             MainFractalWindow.LateDraw += MainDrawLate;
             GuiHandler.Elements.Add(MainFractalWindow);
             int Y = 10;
             PolynomialTextDisplay = new TextDisplay(new RectangleF(10, Y, 300, 40));
             GuiHandler.Elements.Add(PolynomialTextDisplay);
-
-            IterationDisplay = new GuiComponents.TextDisplay(new Rectangle(10, Y += 50, 200, 30));
-            IterationSlider = new GuiComponents.Slider(new Rectangle(10, Y+=40, 200, 30));
+            ExampleButton = new EmptyComponent(new RectangleF(PolynomialTextDisplay.Rect.Right+10, 10,40,40));
+            ExampleButton.MouseDownEvent += ExampleButtonClicked;
+            ExampleButton.LateDraw += ExampleButtonDrawLate;
+            GuiHandler.Elements.Add(ExampleButton);
+            ExampleLocationComponent = new ExampleLocationComponent(ExampleButton.Rect.Right+10,10, AutoZoomController);
+            ExampleLocationComponent.Enabled = false;
+            GuiHandler.Elements.Add(ExampleLocationComponent);
+            
+            IterationDisplay = new TextDisplay(new Rectangle(10, Y += 50, 200, 30));
+            IterationSlider = new Slider(new Rectangle(10, Y+=40, 200, 30));
             IterationSlider.Value = 0.5;
+            
 
             GuiHandler.Elements.Add(IterationSlider);
             GuiHandler.Elements.Add(IterationDisplay);
@@ -148,7 +158,8 @@ namespace AmazingMandelbrot
             }
 
             GuiHandler.PrepareAll(this);
-            
+
+            ExampleLocationComponent.SetFunctionId();
             CursorSystem.ComputeAll();
             AutoZoomButton.Controller.Compute();
             ScreenshotButton.Controller.Compute();
@@ -641,6 +652,19 @@ namespace AmazingMandelbrot
             GL.Disable(EnableCap.StencilTest);
             GL.PopMatrix();
         }
+        void ExampleButtonDrawLate(GuiElement Sender, Main M)
+        {
+            float w = ExampleButton.Rect.Width;
+            float h = w * 0.15f;
+            float pad = 5;
+            GL.Color3(Color.White);
+            for (int i = 0; i < 3; i++)
+            {
+                float y = pad + i*(w-pad*2-h)/2;
+                GL.Rect(pad,y,w-pad,y+h);
+            }
+
+        }
         public void CompassClicked(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
         {
             CompassActive = !CompassActive;
@@ -658,7 +682,7 @@ namespace AmazingMandelbrot
         }
         public void AutoZoomClicked(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
         {
-            AutoZoomController.Prepare();
+            AutoZoomController.PrepareForStaticZoom();
         }
         void MainDrag(GuiElement Sender, PointF MousePos, PointF StartPos, PointF DeltaPos, MouseButtons ButtonStatus)
         {
@@ -737,6 +761,10 @@ namespace AmazingMandelbrot
                 }
             }
         }
+        void ExampleButtonClicked(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
+        {
+            ExampleLocationComponent.Enabled = !ExampleLocationComponent.Enabled;
+        }
         void ScreenshotButtonClicked(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
         {
             ScreenshotActive = 1;
@@ -771,7 +799,6 @@ namespace AmazingMandelbrot
             MainFractalWindow.Resize(w, h);
             MainFractalWindow.Controller.Compute();
             MainFractalWindow.Show(this);
-            PolynomialTextDisplay.Rect = new RectangleF(10, Size.Height - 50, 300, 40);
             CursorSystem.RepositionJulia();
         }
         public void TypeChar(char C)

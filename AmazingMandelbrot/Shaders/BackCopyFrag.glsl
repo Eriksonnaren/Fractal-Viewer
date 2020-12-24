@@ -3,6 +3,9 @@ struct DataStruct
 {
 	double IterationCount;
 	double MinDistance;
+	double DistEstimate;
+	int Period;
+	int RawIter;
 	dvec2 EndPoint;
 };
 layout(std140) buffer DataBlock

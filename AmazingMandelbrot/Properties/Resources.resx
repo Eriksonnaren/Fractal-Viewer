@@ -133,6 +133,9 @@
   <data name="DisplayVert" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\shaders\displayvert.glsl;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
+  <data name="ExampleLocations" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\examplelocations.txt;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
   <data name="GenerateShader" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\shaders\generateshader.glsl;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>

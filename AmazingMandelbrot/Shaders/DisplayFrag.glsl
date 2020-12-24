@@ -3,12 +3,16 @@ struct DataStruct
 {
 	double IterationCount;
 	double MinDistance;
+	double DistEstimate;
+	int RawIter;
+	int Period;
 	dvec2 EndPoint;
 };
 layout(std140) buffer DataBlock
 {
   DataStruct Data[];
 };
+#define Tau 6.28318530718
 in vec2 fPosition;
 out vec4 fragColor;
 uniform ivec2 resolution;
@@ -76,6 +80,31 @@ vec3 GetExteriorColor(float t)
 	vec3 Color1 = vec3(ColorData[Id1*4+1],ColorData[Id1*4+2],ColorData[Id1*4+3]);
 	vec3 Color2 = vec3(ColorData[Id2*4+1],ColorData[Id2*4+2],ColorData[Id2*4+3]);
     return LerpColor(Color1, Color2, Beizer(LerpParameter));
+}
+float GetApproximateDistanceEstimate(ivec2 storePos)
+{
+	int index = int(storePos.y*resolution.x+storePos.x);
+	dvec2 Z0 = Data[index].EndPoint;//current pixel
+	int L = Data[index].RawIter;
+	dvec2 DC = dvec2(0);
+	dvec2 DCI = dvec2(0);
+	DC+=Data[index+1].RawIter==L?Z0-Data[index+1].EndPoint:vec2(0);
+	DCI+=Data[index+resolution.x].RawIter==L?(Z0-Data[index+resolution.x].EndPoint):vec2(0);
+	DC-=Data[index-1].RawIter==L?Z0-Data[index-1].EndPoint:vec2(0);
+	DCI-=Data[index-resolution.x].RawIter==L?(Z0-Data[index-resolution.x].EndPoint):vec2(0);
+	int amount = 0;
+	amount +=Data[index+1].RawIter==L?1:0;
+	amount +=Data[index+resolution.x].RawIter==L?1:0;
+	amount +=Data[index-1].RawIter==L?1:0;
+	amount +=Data[index-resolution.x].RawIter==L?1:0;
+
+	DC = (DC+dvec2(DCI.y,-DCI.x))/amount;
+
+	float r = float(length(Z0));
+	float dr = float(length(DC));
+	
+	float Dist = log(0.5*(r*log(r)/dr));
+	return Dist;
 }
 float hueValue2(float h)
 {
@@ -158,16 +187,38 @@ float GetLight(ivec2 storePos)
 	double H1 = HeightScale*Data[index].IterationCount;//current pixel
 	double H2 = HeightScale*Data[index+1].IterationCount;//pixel to the right
 	double H3 = HeightScale*Data[index+resolution.x].IterationCount;//pixel below
-	dvec3 V1 = dvec3(0,0,H1);
+	dvec3 V1 = dvec3(0,0,H1);//triangle using the 3 pixels with the iterationcount as height in z dimension
 	dvec3 V2 = dvec3(1,0,H2);
 	dvec3 V3 = dvec3(0,1,H3);
-	dvec3 Norm = normalize(cross(V2-V1,V3-V1));
-	return float(dot(Norm,Sun));
+	dvec3 Norm = normalize(cross(V2-V1,V3-V1));//normal vector of triangle
+	return float(dot(Norm,Sun));//dot between normal and sun to give light/shadow
+}
+ivec2 Get3dPosition(ivec2 OriginalPos)
+{
+	vec2 ScreenPos = (vec2(OriginalPos.xy)-vec2(resolution.xy)/2)/resolution.x;
+	float a = Time*0.15;
+	vec3 CameraVector = vec3(cos(a),sin(a),0.5)*0.7;
+	vec3 I = -normalize(CameraVector);
+	vec3 K = normalize(cross(I,vec3(0,0,1)));
+	vec3 J = cross(I,K);
+	vec3 Vel = I+J*ScreenPos.y-K*ScreenPos.x;
+	vec3 Pos = CameraVector;
+	Pos -= Vel*(Pos.z/Vel.z);
+	ivec2 storePos =ivec2(Pos.xy*resolution.x+vec2(resolution.xy)/2);
+	//for(int i = 0;i<100)
+	{
+		
+	}
+	return storePos;
 }
 void main() {
 	Data[100];
 	ivec2 storePos = ivec2(fPosition);
-	vec2 position = (fPosition+vec2(0,(resolution.x-resolution.y)/2))/resolution.x;
+	vec2 position = (vec2(fPosition.xy)-vec2(resolution.xy)/2)/resolution.x;
+	//position=Get3dPosition(position);
+	
+	//storePos =ivec2(position*resolution.x+vec2(resolution.xy)/2);
+
 	vec4 InputColor = texelFetch(sourceTex,storePos,0);
 	int index = int(storePos.y*resolution.x+storePos.x);
 	DataStruct data = Data[index];
@@ -222,34 +273,42 @@ void main() {
 	double L = data.IterationCount;
 	//double L = InputColor.x;
 	//L=0;
+	double DistEstimate = data.DistEstimate;
 	float Dist = float(data.MinDistance);
 	vec3 Col = vec3(InteriorColor);
 	
 	if(L >0)
 	{
-		float K = ColorOffset- ColorScale * (float(L) / 200);
+	//DistEstimate =GetApproximateDistanceEstimate(storePos);
+		float K = ColorOffset- ColorScale * (float(L)/200);
+		//float K = ColorOffset- ColorScale * (float(-DistEstimate)/20);
 		//K+=Time*0.2;
 		//K=Dist*0.03;
-		K = mod(K ,1.0);
+		
 		float a = exp(-0.1*max(float(L)-8,0));
 		//float a =0;
 		float s = 0.85*(1-a*0.2);
 		a*=0.2;
-
+		float Angle = atan(float(data.EndPoint.y),float(data.EndPoint.x))+Time;
+		Angle=mod(Angle+Tau/2,Tau)-Tau/2;
+		float A = exp(-Angle*Angle*8);
+		K = mod(K ,1.0);
+		//Col = vec3(K);
+		Col = a+GetExteriorColor(1-K)*s;
 		
 
-		Col = a+GetExteriorColor(1-K)*s;
-
 		//Col *=(GetLight(storePos)*0.5+1);
-
 		//Col = vec3(GetLight(storePos),0,-GetLight(storePos))*0.5;
-		Col +=(GetLight(storePos)*0.3);
+		
 		//Col.r = a+hueValue2(K) * s;
 		//Col.g = a+hueValue2(K + 0.33) * s;
 		//Col.b = a+hueValue2(K + 0.66) * s;
+		Col +=(GetLight(storePos)*0.3);
 		//Col = FancyColor(K);
 		//Col=vec3((E+L)/100.0);
-		
+		double FractionalIteration = fract(data.IterationCount);
+		//Col.x+=float(FractionalIteration);
+		//Col+=A*0.2;
 	}
 	else
 	{
@@ -298,6 +357,19 @@ void main() {
 		}
 		if(QuaternionJulia==0)
 		{
+			/*int t = int(Time/2);
+			int a = int(mod(data.Period+t+data.Period/3,3));
+			if(a==0)
+			{
+				Col.r+=1;
+			}
+			if(a==1)
+			{
+				Col.g+=1;
+			}if(a==2)
+			{
+				Col+=1;
+			}*/
 			if(FinalDotStrength==0)
 			{
 				float V = float(-0.06*logd(data.MinDistance))*CenterDotStrength;

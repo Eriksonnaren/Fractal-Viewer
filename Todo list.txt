@@ -12,4 +12,5 @@ cross platform?
 iteration slider for julia set window
 minibrot finder
 slider based variable in fractal function
+hue vs rgb button
 olc fractal

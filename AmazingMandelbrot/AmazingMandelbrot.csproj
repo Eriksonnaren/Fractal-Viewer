@@ -131,6 +131,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\BackCopyVert.glsl" />
+    <Content Include="ExampleLocations.txt" />
     <Content Include="xmpir32.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

@@ -111,6 +111,16 @@ namespace AmazingMandelbrot.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to function:z^2+c
+        ///location:.
+        /// </summary>
+        internal static string ExampleLocations {
+            get {
+                return ResourceManager.GetString("ExampleLocations", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
         internal static byte[] GenerateShader {
