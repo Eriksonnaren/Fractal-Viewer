@@ -99,7 +99,7 @@ namespace AmazingMandelbrot
         void PrepareMatricies(Main M, GuiElement E, int Layer, Matrix4 matrix4)
         {
             Layer += E.DrawingLayerOffset;
-            matrix4.Row3 += new Vector4(2 * E.Rect.X / M.Size.Width, -2 * E.Rect.Y / M.Size.Height, 0, 0);
+            matrix4.Row3 += new Vector4(2 * E.Rect.X / Main.Size.Width, -2 * E.Rect.Y / Main.Size.Height, 0, 0);
             E.TranslateVector = matrix4.Row3;
             E.projectionMatrix = matrix4;
             foreach (var E2 in E.ChildElements)
@@ -113,7 +113,7 @@ namespace AmazingMandelbrot
             Layer += E.DrawingLayerOffset;
             //Matrix Mat = M.G.Transform;
             //M.G.TranslateTransform(E.Rect.X, E.Rect.Y);
-            matrix4.Row3 += new Vector4(2 * E.Rect.X / M.Size.Width, -2 * E.Rect.Y / M.Size.Height, 0, 0);
+            matrix4.Row3 += new Vector4(2 * E.Rect.X / Main.Size.Width, -2 * E.Rect.Y / Main.Size.Height, 0, 0);
             E.TranslateVector = matrix4.Row3;
             E.projectionMatrix = matrix4;
 

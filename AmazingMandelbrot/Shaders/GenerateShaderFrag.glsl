@@ -39,6 +39,7 @@ uniform int ArrayMaxC;
 dvec2[8] PolynomialConstants;
 dvec2[8] PolynomialConstantsDerC;
 uniform int MaxPeriod=20;
+uniform int EnableDistanceEstimate;
 uniform ivec2 PixelShift;
 
 
@@ -119,7 +120,7 @@ vec4 MainCompute(dvec2 C,int index)
 	//double d = 2.3*length(C);
 	//C *=(1+1/(pow(float(d),4)));
 	
-	dvec2 Z = dvec2(0);
+	dvec2 Z = dvec2(0,0);
 	//dvec2 W = dvec2(0);
 	if(Julia==1)
 	{
@@ -156,41 +157,53 @@ vec4 MainCompute(dvec2 C,int index)
 	int PeriodSampleIter=Iter-100;
 	int FoundPeriod=0;
 	double PeriodSensitivity=0.00001;
+	dvec2 DerZ;
+	dvec2 DerC;
 	for(L=0;L<Iter;L++)
 	{
 		
 		//DC=Mult(DC,ComputeDerivativeZ(Z))+ComputeDerivativeC(Z);
 		//Z=Compute(Z);
-
-		//dvec2 DerZ=PolynomialConstants[ArrayMax]*ArrayMax;
-		//dvec2 DerC=PolynomialConstantsDerC[ArrayMax];
+		if (EnableDistanceEstimate>0)
+		{
+			DerZ=PolynomialConstants[ArrayMax]*ArrayMax;
+			DerC=PolynomialConstantsDerC[ArrayMax];
+		}
 		dvec2 NewZ=PolynomialConstants[ArrayMax];
 		for(int i =ArrayMaxZ-2;i>=1;i--)
 		{
-			//DerZ=Mult(Z,DerZ)+PolynomialConstants[i]*i;
-			//DerC=Mult(Z,DerC)+PolynomialConstantsDerC[i];
+			if (EnableDistanceEstimate>0)
+			{
+				DerZ=Mult(Z,DerZ)+PolynomialConstants[i]*i;
+				DerC=Mult(Z,DerC)+PolynomialConstantsDerC[i];
+			}
 			NewZ=Mult(Z,NewZ)+PolynomialConstants[i];
 		}
-		//DC=Mult(DC,DerZ)+Mult(Z,DerC)+PolynomialConstantsDerC[0];
+		if (EnableDistanceEstimate>0)
+		{
+			DC=Mult(DC,DerZ)+Mult(Z,DerC)+PolynomialConstantsDerC[0];
+		}
 		Z=Mult(Z,NewZ)+PolynomialConstants[0];
 		//Z = Mult(Z+2*W,Z)+0.3*Div(W-C,Z+1)+Mult(Mult(Mult(C,C-W),C),C+W);
 		//Z=Cos(Z)+C;
 		//Z=Z-Div(Sin(Z),Cos(Z))+C;
 
-		if(L==PeriodSampleIter)
+		/*if(L==PeriodSampleIter)
 		{
 			PeriodReturnPoint=Z;
 		}
 		if(Sq(Z.x-PeriodReturnPoint.x)+Sq(Z.y-PeriodReturnPoint.y)< PeriodSensitivity&&FoundPeriod==0&&L>=PeriodSampleIter)
 		{
 			FoundPeriod=L-PeriodSampleIter;
-		}
+		}*/
+		
 		//PeriodReturnPoint = L==PeriodSampleIter?Z:PeriodReturnPoint;
 		//FoundPeriod = Sq(Z.x-PeriodReturnPoint.x)+Sq(Z.y-PeriodReturnPoint.y)< PeriodSensitivity&&FoundPeriod==0&&L>=PeriodSampleIter?L-PeriodSampleIter:FoundPeriod;
 
 		double RR = Z.x*Z.x;
 		double II = Z.y*Z.y;
 		//double M = 0.05*(RR*II)/((RR+II)*sqrt(RR+II));
+		FoundPeriod = RR+II<MinDist?L:FoundPeriod;
 		MinDist=min(MinDist,RR+II);
 		if(RR+II>100*100)
 		{
@@ -210,6 +223,7 @@ vec4 MainCompute(dvec2 C,int index)
 				}
 			}
 			E=1-logd(logd((length(PolynomialConstants[Power])))/(Power-1)+logd((RR+II))/2)/logd(Power);
+			
 			//E+=logd(logd((length(PolynomialConstants[Power])))/(Power-1)+logd((Bail))/2)/logd(Power);
 			break;
 		}
@@ -218,12 +232,13 @@ vec4 MainCompute(dvec2 C,int index)
 	float r = float(length(Z));
 	float dr = float(length(DC));
 	
-	float Dist = log(0.5*(r*log(r)/dr));
+	float Dist = 2*(r*log(r)/dr);
 	//Dist =1;
 	double A = max(L+E,1);
 	if(L==Iter)
 	{
 		A=0;
+		Dist=0;
 		
 	}else
 	{

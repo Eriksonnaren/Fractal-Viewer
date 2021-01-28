@@ -17,7 +17,7 @@ namespace AmazingMandelbrot
     
     class Main
     {
-        public Size Size;
+        public static Size Size;
         public Matrix4 projectionMatrix;
         public GuiHandler GuiHandler;
         Slider IterationSlider;
@@ -30,6 +30,7 @@ namespace AmazingMandelbrot
         FractalWindow ScreenshotButton;
         FractalWindow AutoZoomButton;
         EmptyComponent ExampleButton;
+        FractalWindow MeshToggleButton;
         ExampleLocationComponent ExampleLocationComponent;
         bool EnableMinibrots;
         int CurrentMinibrotOrder;
@@ -43,11 +44,11 @@ namespace AmazingMandelbrot
         const int MinibrotWindowSize=120;
         Stopwatch stopwatch = new Stopwatch();
         double T = 0;
-        Complex[,] MainCoefficientArray;
-        Complex[,] OldCoefficientArray;
+        public Complex[,] MainCoefficientArray;
+        public Complex[,] OldCoefficientArray;
         Complex[,] DifferenceCoefficientArray;
         TextDisplay PolynomialTextDisplay;
-        PolynomialParser polynomialParser=new PolynomialParser();
+        public PolynomialParser polynomialParser=new PolynomialParser();
         Timer ErrorTimer = new Timer(50);
         int TextCursorTimer;
         public static double PolynomialAnimationTimer = 1;
@@ -66,15 +67,22 @@ namespace AmazingMandelbrot
         AutoZoomController AutoZoomController=new AutoZoomController();
         float ScreenshotActive = 0;
         FileController fileController;
+        GraphComponent FourierPlot;
+        SoundGenerator soundGenerator;
+        double FractionalIterationSliderValue;
+        Slider SoundVolumeSlider;
+        Slider SoundFrequencySlider;
+        EmptyComponent SoundContainer;
         public Main(Size Size)
         {
+            soundGenerator = new SoundGenerator();
             GL.Enable(EnableCap.Multisample);
             //GL.fwWindowHint(GLFW_SAMPLES, 4);
             SetOrthographicProjection(0, 0, Size.Width, Size.Height);
             
             SF.Alignment = StringAlignment.Center;
             SF.LineAlignment = StringAlignment.Center;
-            this.Size = Size;
+            Main.Size = Size;
             GuiHandler = new GuiHandler();
             fileController = new FileController();
             MainFractalWindow = new FractalWindow(new Rectangle(0, 0, Size.Width, Size.Height));
@@ -87,7 +95,7 @@ namespace AmazingMandelbrot
             ExampleButton.MouseDownEvent += ExampleButtonClicked;
             ExampleButton.LateDraw += ExampleButtonDrawLate;
             GuiHandler.Elements.Add(ExampleButton);
-            ExampleLocationComponent = new ExampleLocationComponent(ExampleButton.Rect.Right+10,10, AutoZoomController);
+            ExampleLocationComponent = new ExampleLocationComponent(ExampleButton.Rect.Right+10,10, AutoZoomController,this);
             ExampleLocationComponent.Enabled = false;
             GuiHandler.Elements.Add(ExampleLocationComponent);
             
@@ -98,7 +106,8 @@ namespace AmazingMandelbrot
 
             GuiHandler.Elements.Add(IterationSlider);
             GuiHandler.Elements.Add(IterationDisplay);
-
+            ColorEditor = new ColorEditor(new RectangleF(ExampleButton.Rect.Right + 10, 10, 440, 150));
+            GuiHandler.Elements.Add(ColorEditor);
 
             ColorMenuButton = new FractalWindow(new Rectangle(10, Y += 40, 70, 70));
             ColorMenuButton.Controller.CameraPos = new Complex(-0.5,0);
@@ -133,6 +142,22 @@ namespace AmazingMandelbrot
             ScreenshotButton.EnableInteraction = false;
             GuiHandler.Elements.Add(ScreenshotButton);
 
+            MeshToggleButton = new FractalWindow(new Rectangle(10, Y += 80, 70, 70));
+            MeshToggleButton.EnableInteraction = false;
+            MeshToggleButton.MouseDownEvent += MeshToggleClick;
+            GuiHandler.Elements.Add(MeshToggleButton);
+
+            float SoundSlideWidth = 30;
+            SoundContainer = new EmptyComponent(new RectangleF(10,Size.Height-210, SoundSlideWidth*2+30, 200));
+            SoundVolumeSlider = new Slider(new RectangleF(10, SoundSlideWidth+20, SoundSlideWidth, SoundContainer.Rect.Height-(SoundSlideWidth + 30)));
+            SoundFrequencySlider = new Slider(new RectangleF(20+ SoundSlideWidth, SoundSlideWidth + 20, SoundSlideWidth, SoundContainer.Rect.Height - (SoundSlideWidth + 30)));
+            SoundContainer.ChildElements.Add(SoundVolumeSlider);
+            SoundContainer.ChildElements.Add(SoundFrequencySlider);
+            GuiHandler.Elements.Add(SoundContainer);
+            SoundVolumeSlider.Value = 0.5;
+            SoundFrequencySlider.Value = 0.5;
+            SoundContainer.LateDraw+=SoundContainerDrawLate;
+
             DrawIterationDisplay();
             
             TextDisplay = new TextDisplay(new RectangleF(10, Y+=80, 100, 30));
@@ -141,7 +166,9 @@ namespace AmazingMandelbrot
             //MinibrotContainer = new EmptyComponent(new RectangleF(10, Size.Height - H-10, Size.Width-20,H));
             //GuiHandler.Elements.Add(MinibrotContainer);
             //MinibrotContainer.Enabled = false;
-            
+            FourierPlot = new GraphComponent(new RectangleF(10,Size.Height-210,500,200),Color.Red);
+            //GuiHandler.Elements.Add(FourierPlot);
+            FourierPlot.DrawLines = false;
             UpdatePolynomialTextDisplay();
 
             MainCoefficientArray = polynomialParser.CoefficientArray;
@@ -165,22 +192,28 @@ namespace AmazingMandelbrot
             ScreenshotButton.Controller.Compute();
             MainFractalWindow.Controller.Compute();
             ColorMenuButton.Controller.Compute();
+            MeshToggleButton.Controller.Compute();
+            
             for (int i = 0; i < CursorSystem.juliaController.AllButtons.Length; i++)
             {
                 CursorSystem.juliaController.AllButtons[i].Enabled = false;
             }
             CursorSystem.JuliaWindow.Enabled = false;
+            MeshToggleButton.Controller.GenerateMesh(300, 800);
+            MeshToggleButton.Controller.SetMeshActive(true);
             
-            ColorEditor = new ColorEditor(new RectangleF(250,10,380,150));
-            GuiHandler.Elements.Add(ColorEditor);
-            ColorEditor.Enabled = false;
+            
             ColorEditor.fractalWindows.Add(MainFractalWindow);
             ColorEditor.fractalWindows.Add(CursorSystem.JuliaWindow);
             ColorEditor.UpdateFractalWindows();
-            
+            ColorEditor.DistanceColoringButton.Controller.Compute();
+            ColorEditor.Enabled = false;
             AutoZoomController.MainWindow = MainFractalWindow;
             AutoZoomController.JuliaWindow = CursorSystem.JuliaWindow;
             AutoZoomController.ColorEditor = ColorEditor;
+            MainFractalWindow.Controller.GenerateMesh(500, 1000);
+            //MainFractalWindow.Controller.SetMeshActive(true);
+            
         }
         public void Update()
         {
@@ -225,9 +258,25 @@ namespace AmazingMandelbrot
             if (IterationSlider.HoldingHandle)
             {
                 double A = 2*(IterationSlider.Value - 0.5);
-                MainFractalWindow.Controller.Iterations += (int)(10*A*A*Math.Sign(A));
-                if (MainFractalWindow.Controller.Iterations < 10)
-                    MainFractalWindow.Controller.Iterations = 10;
+                
+                A= (10 * A * A * Math.Sign(A));
+                double B = A - (int)A;
+                MainFractalWindow.Controller.Iterations += (int)A;
+                FractionalIterationSliderValue+=B;
+                if(FractionalIterationSliderValue>1)
+                {
+                    MainFractalWindow.Controller.Iterations++;
+                    FractionalIterationSliderValue = 0;
+
+                }
+                else if(FractionalIterationSliderValue < -1)
+                {
+                    MainFractalWindow.Controller.Iterations--;
+                    FractionalIterationSliderValue = 0;
+                }
+
+                if (MainFractalWindow.Controller.Iterations < 1)
+                    MainFractalWindow.Controller.Iterations = 1;
                 DrawIterationDisplay();
                 
             }
@@ -343,6 +392,26 @@ namespace AmazingMandelbrot
             CursorSystem.Update();
             
             ErrorTimer.Update();
+            SoundContainer.Enabled = CursorSystem.SoundActive;
+            if (CursorSystem.SoundActive)
+            {
+                soundGenerator.C = CursorSystem.mainController.CursorWorldPosition;
+                soundGenerator.CoefficientArray = MainCoefficientArray;
+                soundGenerator.VolumeScale = 4 * SoundVolumeSlider.Value * SoundVolumeSlider.Value;
+                soundGenerator.FrequencyScale = Lerp(0.2f,3, (float)(SoundFrequencySlider.Value));
+                soundGenerator.UpdateParameters();
+                if (!soundGenerator.Playing)
+                {
+                    soundGenerator.Start();
+                }
+            }
+            else
+            {
+                if (soundGenerator.Playing)
+                {
+                    soundGenerator.Stop();
+                }
+            }
         }
         public double Beizer(double X)
         {
@@ -360,6 +429,7 @@ namespace AmazingMandelbrot
         }
         public void MainDrawLate(GuiElement Sender, Main M)
         {
+            
             if (EnableMinibrots)
             {
                 for (int i = 0; i < AllMinibrots.Count; i++)
@@ -424,7 +494,39 @@ namespace AmazingMandelbrot
                 
                 
             }
-            if(CompassActive)
+            //bifurcation diagram
+            if (false)
+            {
+                fractalMath.CoefficientArray = MainCoefficientArray;
+                int Steps = 1000;
+                int ConvergenceIterations = 100;
+                int PlottingIterations = 50;
+                GL.Color3(Color.White);
+                GL.PointSize(2);
+                GL.Begin(PrimitiveType.Points);
+                double s = 0.25 * MainFractalWindow.Controller.Zoom;
+                for (int i = 0; i < Steps; i++)
+                {
+
+                    Complex C = MainFractalWindow.Controller.CameraPos.real + (new Complex(i, 0) * 2 / Steps - 1) * MainFractalWindow.Controller.Zoom;
+                    Complex Z = new Complex(0, 0);
+                    fractalMath.SetCoefficients(C);
+                    for (int L = 0; L < ConvergenceIterations + PlottingIterations; L++)
+                    {
+                        Z = fractalMath.Compute(Z);
+                        if (Z.MagSq() > 10)
+                        {
+                            break;
+                        }
+                        else if (L > ConvergenceIterations)
+                        {
+                            GL.Vertex2(MainFractalWindow.GetScreenFromWorld(C + new Complex(0, Z.real * s)));
+                        }
+                    }
+                }
+                GL.End();
+            }
+            if (CompassActive)
             {
                 GL.PushMatrix();
                 double Rad = MainFractalWindow.Rect.Height * CompassRad;
@@ -498,6 +600,70 @@ namespace AmazingMandelbrot
                     Clipboard.SetImage(bmp);
                 }
                 ScreenshotActive -= 0.05f;
+            }
+            if(CursorSystem.OrbitActive)
+            {
+                
+                int midStep = 100;
+                int StepSize = 30;
+                double PreviousHeight = 0;
+                double Height = 0;
+                fractalMath.CoefficientArray = MainCoefficientArray;
+                fractalMath.SetCoefficients(CursorSystem.mainController.CursorWorldPosition);
+                Complex Z = new Complex(0, 0);
+                Complex AveragePoint = new Complex(0, 0);
+                Vector2 RotationPoint = new Vector2(1, 0);
+                for (int i = 0; i < 50; i++)
+                {
+                    PreviousHeight = Height;
+                    Z = fractalMath.Compute(Z);
+                    Vector2 Zv = new Vector2((float)(Z.real - AveragePoint.real), (float)(Z.imag - AveragePoint.imag));
+                    Vector2 Projection = Zv * Vector2.Dot(RotationPoint, Zv) / Vector2.Dot(Zv, Zv);
+                    RotationPoint += Projection / 10;
+                    RotationPoint.Normalize();
+                    AveragePoint += (Z - AveragePoint) / 10;
+                    Height = Vector2.Dot(Zv, RotationPoint);
+                    if (Z.MagSq() > 100)
+                    {
+                        break;
+                    }
+                }
+                for (int i = 0; i < FourierPlot.Array.Length; i++)
+                {
+                    midStep++;
+                    if (midStep >= StepSize)
+                    {
+                        midStep = 0;
+                        PreviousHeight = Height;
+                        Z = fractalMath.Compute(Z);
+                        Vector2 Zv = new Vector2((float)(Z.real-AveragePoint.real), (float)(Z.imag- AveragePoint.imag));
+                        Vector2 Projection = Zv * Vector2.Dot(RotationPoint, Zv) / Vector2.Dot(Zv,Zv);
+                        RotationPoint += Projection/10;
+                        RotationPoint.Normalize();
+                        AveragePoint += (Z - AveragePoint) / 10;
+
+                        Height = Vector2.Dot(Zv, RotationPoint);
+                        if (Z.MagSq()>100)
+                        {
+                            break;
+                        }
+                    }
+                    double T = midStep / (float)StepSize;
+                    T = Beizer(T);
+                    FourierPlot.Add(PreviousHeight*(1-T) + Height*(T) );
+                        
+                }
+                /*Vector2 Center = MainFractalWindow.GetScreenFromWorld(AveragePoint);
+                GL.Color3(Color.White);
+                GL.Rect(Center.X-5, Center.Y - 5, Center.X + 5, Center.Y + 5);
+                GL.Color3(Color.Orange);
+                GL.Begin(PrimitiveType.Lines);
+                GL.Vertex2(Center.X,Center.Y);
+                GL.Vertex2(Center.X+ RotationPoint.X*30, Center.Y + RotationPoint.Y * 30);
+                GL.End();*/
+            }else
+            {
+                
             }
         }
         public void CompassDrawLate(GuiElement Sender, Main M)
@@ -665,19 +831,60 @@ namespace AmazingMandelbrot
             }
 
         }
-        public void CompassClicked(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
+        void SoundContainerDrawLate(GuiElement Sender, Main M)
         {
-            CompassActive = !CompassActive;
+            float w = SoundFrequencySlider.Rect.Width;
+            float h = w*0.2f;
+            GL.PushMatrix();
+            GL.Translate(SoundVolumeSlider.Rect.X,w/4,0);
+            GL.Color3(Color.White);
+            for (int i = 0; i < 3; i++)
+            {
+                float x = i * (w - h) / 2;
+                GL.Rect(x, w* (1-Lerp(0.2f, 1.0f, i / 3.0f)), x + h, w);
+            }
+            GL.PopMatrix();
+            GL.PushMatrix();
+            GL.Translate(SoundFrequencySlider.Rect.X, w/2+10, 0);
+            GL.Color3(Color.White);
+            GL.LineWidth(2);
+            GL.Begin(PrimitiveType.Lines);
+            Vector2 Pos = new Vector2(0, 0);
+            for (int i = 0; i <= 20; i++)
+            {
+                float x = w*(i/20f);
+                float y = w*0.5f * (float)Math.Sin(2.0* (i / 20f)*Math.PI);
+                GL.Vertex2(Pos);
+                Pos = new Vector2(x,y);
+                GL.Vertex2(Pos);
+            }
+            GL.End();
+            GL.PopMatrix();
+        }
+        void MeshToggleClick(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
+        {
+            MainFractalWindow.Controller.SetMeshActive(!MainFractalWindow.Controller.MeshActive);
+            CompassActive = false;
             MainFractalWindow.EnableInteraction = !CompassActive;
             MainFractalWindow.Controller.UseOldAngle = CompassActive;
             MainFractalWindow.Controller.OldAngle = MainFractalWindow.Controller.Angle;
-            if(!CompassActive)
+        }
+        public void CompassClicked(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
+        {
+            if (!MainFractalWindow.Controller.MeshActive)
             {
-                if (CursorSystem.JuliaActive)
+                CompassActive = !CompassActive;
+                MainFractalWindow.EnableInteraction = !CompassActive;
+                MainFractalWindow.Controller.UseOldAngle = CompassActive;
+                MainFractalWindow.Controller.OldAngle = MainFractalWindow.Controller.Angle;
+                if (!CompassActive)
                 {
-                    CursorSystem.JuliaWindow.Controller.Compute();
+                    if (CursorSystem.JuliaActive)
+                    {
+                        CursorSystem.JuliaWindow.Controller.Compute();
+                    }
+                    MainFractalWindow.Controller.Compute();
                 }
-                MainFractalWindow.Controller.Compute();
             }
         }
         public void AutoZoomClicked(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
@@ -744,10 +951,7 @@ namespace AmazingMandelbrot
         {
             ColorMenuButton.Controller.ColorOffset += 0.02f;
         }
-        void ColorMenuButtonClicked(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
-        {
-            ColorEditor.Enabled = !ColorEditor.Enabled;
-        }
+        
         void MainWindowClick(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
         {
             if(CompassActive&& ButtonStatus == MouseButtons.Left)
@@ -761,9 +965,16 @@ namespace AmazingMandelbrot
                 }
             }
         }
+        void ColorMenuButtonClicked(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
+        {
+            ColorEditor.Enabled = !ColorEditor.Enabled;
+            ExampleLocationComponent.Enabled = false;
+            
+        }
         void ExampleButtonClicked(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
         {
             ExampleLocationComponent.Enabled = !ExampleLocationComponent.Enabled;
+            ColorEditor.Enabled = false;
         }
         void ScreenshotButtonClicked(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
         {

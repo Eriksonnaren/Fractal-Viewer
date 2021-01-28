@@ -31,9 +31,12 @@ namespace AmazingMandelbrot.GuiComponents
         int SelectedIndex = -1;
         Slider[] ColorSliders = new Slider[3];
         Slider ColorScaleSlider;
+        public FractalWindow DistanceColoringButton;
         public Slider DotStrengthSlider;
         public float ColorScale;
         public List<FractalWindow> fractalWindows=new List<FractalWindow>();
+        bool DistanceEstimateColoring = false;
+        float DistanceEstimateColoringLerp = 0;
         public ColorEditor(RectangleF Rect) : base(Rect)
         {
             float Padding = 10;
@@ -72,20 +75,29 @@ namespace AmazingMandelbrot.GuiComponents
             X += 140 + Padding;
             DotStrengthSlider = new Slider(new RectangleF(X, Padding,30 , Rect.Height - Padding * 2));
             DotStrengthSlider.Value = 1;
+            X += 30 + Padding;
             ChildElements.Add(DotStrengthSlider);
             ColorScaleSlider.SliderEvent += ScaleSliderChanged;
+            DistanceColoringButton = new FractalWindow(new RectangleF(X,Padding,50,50));
+            DistanceColoringButton.Controller.CameraPos = new Complex(-0.037896351914748, 0.682660083979483);
+            DistanceColoringButton.Controller.Zoom = 0.005;
+            DistanceColoringButton.EnableInteraction = false;
+            DistanceColoringButton.MouseDownEvent += DistanceColorButtonClicked;
+            DistanceColoringButton.Controller.DistanceEstimateEnabled = true;
+            DistanceColoringButton.Controller.ColorScale = 5;
+            ChildElements.Add(DistanceColoringButton);
         }
         public override void Update()
         {
-
+            
             RotatePalette(RotationSpeed);
             SortPalette();
             UpdateFractalWindows();
-            if (SelectedIndex<0)
+            if (SelectedIndex < 0)
             {
-                InteriorColor.R=(float)ColorSliders[0].Value;
-                InteriorColor.G=(float)ColorSliders[1].Value;
-                InteriorColor.B= (float)ColorSliders[2].Value;
+                InteriorColor.R = (float)ColorSliders[0].Value;
+                InteriorColor.G = (float)ColorSliders[1].Value;
+                InteriorColor.B = (float)ColorSliders[2].Value;
             }
             else
             {
@@ -93,7 +105,22 @@ namespace AmazingMandelbrot.GuiComponents
                 ColorPalette[SelectedIndex].G = (float)ColorSliders[1].Value;
                 ColorPalette[SelectedIndex].B = (float)ColorSliders[2].Value;
             }
-            
+            float s = 0.05f;
+            if (DistanceEstimateColoring && DistanceEstimateColoringLerp < 1)
+            {
+                DistanceEstimateColoringLerp += s;
+                DistanceEstimateColoringLerp = DistanceEstimateColoringLerp < 1 ? DistanceEstimateColoringLerp : 1;
+            }
+            else if (!DistanceEstimateColoring && DistanceEstimateColoringLerp > 0)
+            {
+                DistanceEstimateColoringLerp -= s;
+                DistanceEstimateColoringLerp = DistanceEstimateColoringLerp > 0 ? DistanceEstimateColoringLerp : 0;
+            }
+            foreach (var item in fractalWindows)
+            {
+                item.Controller.DistanceEstimateColoringLerp = Beizer(DistanceEstimateColoringLerp);
+            }
+            DistanceColoringButton.Controller.DistanceEstimateColoringLerp = 1 - Beizer(DistanceEstimateColoringLerp);
         }
         public void RotatePalette(float Amount)
         {
@@ -213,7 +240,6 @@ namespace AmazingMandelbrot.GuiComponents
                 fractalWindows[i].Controller.ColorScale = ColorScale;
                 fractalWindows[i].Controller.PaletteSize = CurrentPaletteSize;
             }
-            
         }
         void FillCircle(Color4 Col,float Radius)
         {
@@ -324,6 +350,19 @@ namespace AmazingMandelbrot.GuiComponents
                 IsHoldingCircle = true;
 
             }
+        }
+        void DistanceColorButtonClicked(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
+        {
+            DistanceEstimateColoring = !DistanceEstimateColoring;
+            foreach (var item in fractalWindows)
+            {
+                item.Controller.DistanceEstimateEnabled = DistanceEstimateColoring;
+                if (DistanceEstimateColoring)
+                {
+                    item.Controller.Compute();
+                }
+            }
+            
         }
         void SetSlidersFromColor(Color4 Col)
         {

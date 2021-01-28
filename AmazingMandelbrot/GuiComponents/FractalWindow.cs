@@ -26,6 +26,7 @@ namespace AmazingMandelbrot.GuiComponents
         {
             Controller = new ShaderController((int)Rect.Width, (int)Rect.Height);
             Controller.fractalWindow = this;
+            Controller.camera3D = new Camera3d(new Vector3(0,3,-3)*200,Rect,this);
             //Controller.projectionMatrix = Matrix4.CreateOrthographicOffCenter(0, Rect.Width, Rect.Height, 0, 1f, -1f);
             //Controller.projectionMatrix = ;
             ScrollEvent += Scroll;
@@ -138,44 +139,54 @@ namespace AmazingMandelbrot.GuiComponents
         {
             if (EnableInteraction && Main.PolynomialAnimationTimer >= 1)
             {
+                if (Controller.MeshActive)
+                {
+                    if (Dir < 0)
+                    {
+                        Controller.CameraDistance *= 1.2;
+                    }else if (Dir > 0)
+                    {
+                        Controller.CameraDistance /= 1.2;
+                    }
+                }
+                else
+                {
+                    double ScaleFactor = 1;
+                    if (Dir < 0)
+                    {
+                        ScaleFactor = ZoomSpeed;
+                    }
+                    else if (Dir > 0)
+                    {
+                        ScaleFactor = 1 / ZoomSpeed;
+                    }
+                    Complex CurrentPos = GetWorldFromScreen(new Vector2(MousePos.X, MousePos.Y));
+                    CurrentPos -= Controller.CameraPos;
+                    CurrentPos += Controller.CameraPos;
+                    Controller.CameraPos = Controller.CameraPos * ScaleFactor + CurrentPos * (1 - ScaleFactor);
+                    Controller.Zoom *= ScaleFactor;
 
-                double ScaleFactor = 1;
-                if(Dir<0)
-                {
-                    ScaleFactor = ZoomSpeed;
-                }else if(Dir > 0)
-                {
-                    ScaleFactor = 1 / ZoomSpeed;
+                    Controller.Compute();
                 }
-                Complex CurrentPos = GetWorldFromScreen(new Vector2(MousePos.X, MousePos.Y));
-                CurrentPos -= Controller.CameraPos;
-                //CurrentPos = Rotate(CurrentPos,Controller.Angle);
-                CurrentPos += Controller.CameraPos;
-                Controller.CameraPos = Controller.CameraPos * ScaleFactor + CurrentPos * (1 - ScaleFactor);
-                Controller.Zoom *= ScaleFactor;
-                /*if (Dir > 0)
-                {
-                    Controller.CameraPos = ((new Complex(MousePos.X-Rect.Width/2, MousePos.Y - Rect.Height / 2) / Rect.Width) * Controller.Zoom * 2) + Controller.CameraPos;
-                    Controller.Zoom /= 2;
-                }
-                if (Dir < 0)
-                {
-                    //Controller.CameraPos = ((new Complex(MousePos.X - Rect.Width / 2, MousePos.Y - Rect.Height / 2) / Rect.Width) * Controller.Zoom * 2) + Controller.CameraPos;
-                    Controller.Zoom *= 2;
-                }*/
-                //Controller.Compute();
-                //Console.WriteLine(Controller.CameraPos.ToString());
-                Controller.Compute();
             }
         }
         void Drag(GuiElement Sender, PointF MousePos, PointF StartPos, PointF DeltaPos, MouseButtons ButtonStatus)
         {
             if (EnableInteraction&& ButtonStatus== MouseButtons.Left&&Main.PolynomialAnimationTimer>=1)
             {
-                Controller.CameraPos += Rotate(new Complex(DeltaPos.X, DeltaPos.Y),Controller.Angle) * Controller.Zoom / Rect.Width * 2;
-                Controller.PixelShift = new Point((int)DeltaPos.X, (int)DeltaPos.Y);
-                Controller.Compute();
-                Controller.Draw();
+                if (Controller.MeshActive)
+                {
+                    Controller.CameraAngleY -= DeltaPos.Y * 0.005;
+                    Controller.CameraAngleX += DeltaPos.X * 0.005;
+                    Controller.CameraAngleY = Math.Max(Math.Min(Controller.CameraAngleY,1.5),-1.5);
+                }
+                else
+                {
+                    Controller.CameraPos += Rotate(new Complex(DeltaPos.X, DeltaPos.Y), Controller.Angle) * Controller.Zoom / Rect.Width * 2;
+                    Controller.PixelShift = new Point((int)DeltaPos.X, (int)DeltaPos.Y);
+                    Controller.Compute();
+                    //Controller.Draw();
+                }
             }
         }
         public Complex Rotate(Complex C,float Angle)

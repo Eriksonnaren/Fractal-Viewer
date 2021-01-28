@@ -16,3 +16,5 @@ C:\Users\erikh\OneDrive\Visual Studio\AmazingMandelbrot\AmazingMandelbrot\obj\De
 C:\Users\erikh\OneDrive\Visual Studio\AmazingMandelbrot\AmazingMandelbrot\obj\Debug\AmazingMandelbrot.exe
 C:\Users\erikh\OneDrive\Visual Studio\AmazingMandelbrot\AmazingMandelbrot\obj\Debug\AmazingMandelbrot.pdb
 C:\Users\erikh\OneDrive\Visual Studio\AmazingMandelbrot\AmazingMandelbrot\obj\Debug\AmazingMandelbrot.csproj.CoreCompileInputs.cache
+C:\Users\erikh\OneDrive\Visual Studio\AmazingMandelbrot\AmazingMandelbrot\bin\Debug\NAudio.dll
+C:\Users\erikh\OneDrive\Visual Studio\AmazingMandelbrot\AmazingMandelbrot\bin\Debug\NAudio.xml

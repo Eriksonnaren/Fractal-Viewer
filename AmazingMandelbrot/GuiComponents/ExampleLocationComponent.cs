@@ -38,8 +38,10 @@ namespace AmazingMandelbrot.GuiComponents
         int currentFunctionId = 0;
         int currentLocationOffsetId = 0;
         public AutoZoomController zoomController;
-        public ExampleLocationComponent(float x,float y, AutoZoomController zoomController) : base(new RectangleF(x,y,Width,Height))
+        Main M;
+        public ExampleLocationComponent(float x,float y, AutoZoomController zoomController,Main M) : base(new RectangleF(x,y,Width,Height))
         {
+            this.M = M;
             this.zoomController = zoomController;
             string Data = Resources.ExampleLocations;
             string[] lines = Data.Split(new string[] {"\r","\n" },StringSplitOptions.RemoveEmptyEntries);
@@ -191,6 +193,8 @@ namespace AmazingMandelbrot.GuiComponents
             {
                 zoomController.PrepareFromExisting(window);
                 zoomController.Start();
+                M.MainCoefficientArray = window.Controller.CoefficientArray;
+                M.polynomialParser.InputString = parser.InputString;
             }
         }
         public void SetFunctionId()

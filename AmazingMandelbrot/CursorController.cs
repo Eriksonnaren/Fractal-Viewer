@@ -162,7 +162,7 @@ namespace AmazingMandelbrot
             for (int i = 0; i < AllButtons.Length; i++)
             {
                 double Angle = L * Math.PI * 0.5 + (i * Math.PI * 2) / (AllButtons.Length);
-                AllButtons[i].Rect.Location = new PointF((float)Math.Cos(Angle) * ButtonDistance * L + Offset + OffsetX, (float)Math.Sin(Angle) * ButtonDistance * L + Offset + OffsetY);
+                AllButtons[i].Rect.Location = new PointF((float)Math.Cos(Angle) * ButtonDistance * L + Offset + OffsetX, -(float)Math.Sin(Angle) * ButtonDistance * L + Offset + OffsetY);
             }
         }
         public void MainComputed()

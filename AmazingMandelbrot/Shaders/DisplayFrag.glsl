@@ -13,7 +13,7 @@ layout(std140) buffer DataBlock
   DataStruct Data[];
 };
 #define Tau 6.28318530718
-in vec2 fPosition;
+in vec3 fPosition;
 out vec4 fragColor;
 uniform ivec2 resolution;
 uniform sampler2D sourceTex;
@@ -42,6 +42,7 @@ uniform vec2 IterationPoint;
 uniform float CenterDotStrength;
 uniform float FinalDotStrength;
 uniform dvec2 FinalDotPosition;
+uniform float DistanceEstimateColoringLerp;
 
 float hueValue(float h)
 {
@@ -196,7 +197,7 @@ float GetLight(ivec2 storePos)
 ivec2 Get3dPosition(ivec2 OriginalPos)
 {
 	vec2 ScreenPos = (vec2(OriginalPos.xy)-vec2(resolution.xy)/2)/resolution.x;
-	float a = Time*0.15;
+	float a = Time*0.05;
 	vec3 CameraVector = vec3(cos(a),sin(a),0.5)*0.7;
 	vec3 I = -normalize(CameraVector);
 	vec3 K = normalize(cross(I,vec3(0,0,1)));
@@ -205,17 +206,33 @@ ivec2 Get3dPosition(ivec2 OriginalPos)
 	vec3 Pos = CameraVector;
 	Pos -= Vel*(Pos.z/Vel.z);
 	ivec2 storePos =ivec2(Pos.xy*resolution.x+vec2(resolution.xy)/2);
-	//for(int i = 0;i<100)
+	float PreviousHeight=0;
+	for(int i = 0;i<100;i++)
 	{
+		int index = int(storePos.y*resolution.x+storePos.x);
+		DataStruct data = Data[index];
+		double DistEstimate = data.DistEstimate;
+		float Height = -0.001*exp(sin(Time*0.5))*float(DistEstimate)/resolution.x;
+		if(abs(Pos.z-Height)<3/resolution.x)
+		{
+			break;
+		}
+		Pos -= Vel*((Pos.z-(Height+PreviousHeight)/2)/Vel.z);
+		PreviousHeight=Height;
+		//Pos+=Vel/resolution.x;
+		//float T=0.1*(Height-Pos.z)/Vel.z;
+		//Pos += Vel*T;
 		
+		storePos =ivec2(Pos.xy*resolution.x+vec2(resolution.xy)/2);
 	}
 	return storePos;
 }
 void main() {
-	Data[100];
+	
 	ivec2 storePos = ivec2(fPosition);
+	//storePos=Get3dPosition(storePos);
 	vec2 position = (vec2(fPosition.xy)-vec2(resolution.xy)/2)/resolution.x;
-	//position=Get3dPosition(position);
+	
 	
 	//storePos =ivec2(position*resolution.x+vec2(resolution.xy)/2);
 
@@ -228,8 +245,8 @@ void main() {
 
 	//double Scale = 1-C*0.3;
 	//C=1;
-	double RealC = position.x*2*Zoom-Zoom+CameraReal;
-	double ImagC = position.y*2*Zoom-Zoom+CameraImag;
+	double RealC = position.x*2*Zoom+CameraReal;
+	double ImagC = position.y*2*Zoom+CameraImag;
 	double RealZ = 0;
 	double ImagZ = 0;
 	if(RealC*RealC+ImagC*ImagC<0.0001)
@@ -280,8 +297,11 @@ void main() {
 	if(L >0)
 	{
 	//DistEstimate =GetApproximateDistanceEstimate(storePos);
-		float K = ColorOffset- ColorScale * (float(L)/200);
-		//float K = ColorOffset- ColorScale * (float(-DistEstimate)/20);
+		//float K = ColorOffset- ColorScale * (float(L)/200);
+		float K = Lerp(
+		ColorOffset- ColorScale * (float(L)/200),
+		ColorOffset- ColorScale * (-log(float(DistEstimate))/40),
+		DistanceEstimateColoringLerp);
 		//K+=Time*0.2;
 		//K=Dist*0.03;
 		
@@ -312,49 +332,7 @@ void main() {
 	}
 	else
 	{
-		if(PeriodHighlight>0)
-		{
-			
-			/*dvec2 Z0 = C;
-			for(int i =0;i<5;i++)//newtons method
-			{
-				dvec2 Z1=Z0;
-				dvec2 DZ1=vec2(1,0);
-				for(int j=0;j<PeriodHighlight;j++)
-				{
-				  DZ1=Mult(ComputeDerivative(Z1),DZ1);
-				  Z1=Compute(Z1);
-				}
-				dvec2 Change = Div((Z1-Z0),(DZ1-vec2(1,0)));
-				Z0=Z0-Change;
-				if(length(Change)<0.1*length(Z0-C))
-					break;
-			}
-			dvec2 FixedPoint = Z0;
-			dvec2 DZ0=dvec2(1,0);
-			for(int j=0;j<PeriodHighlight;j++)
-			{
-			  DZ0=Mult(ComputeDerivative(Z0),DZ0);
-			  Z0=Compute(Z0);
-			}
-			if(DZ0.x*DZ0.x+DZ0.y*DZ0.y<1.0)
-			{
-				
-				
-					float Angle = atan(float(DZ0.y),float(DZ0.x));
-					
-					float P = 0.5+0.5*cos(4*pi*pi/Angle);
-					
-					float R = float(length(DZ0));
-					P=P*P*P*P*smoothstep(1-0.5*abs(Angle/pi),1,R);
-					float Q = smoothstep(0,1,float((1-abs(DZ0.y*10))*smoothstep(-1,0,DZ0.x*10)));
-					Col.r=R*(1-Q);
-					Col.b=Col.g=R*Q;
-					Col.g+=(P);
-				
-			}*/
 		
-		}
 		if(QuaternionJulia==0)
 		{
 			/*int t = int(Time/2);
@@ -391,24 +369,82 @@ void main() {
 		//r=g=b=1-s;
 
 	}
-	dvec2 J = dvec2(0,1);
+	if(PeriodHighlight<0)
+		{
+			int P = min(PeriodHighlight,data.Period);
+			//P=PeriodHighlight;
+			P=6;
+			dvec2 Z0 = C;
+			for(int i =0;i<0;i++)//newtons method
+			{
+				dvec2 Z1=Z0;
+				dvec2 DZ1=vec2(1,0);
+				for(int j=0;j<P;j++)
+				{
+				  DZ1=Mult(ComputeDerivative(Z1),DZ1);
+				  Z1=Compute(Z1);
+				}
+				dvec2 Change = Div((Z1-Z0),(DZ1-vec2(1,0)));
+				Z0=Z0-Change;
+				if(length(Change)<0.1*length(Z0-C))
+					break;
+			}
+			dvec2 FixedPoint = Z0;
+			dvec2 DZ0=dvec2(1,0);
+			for(int j=0;j<P;j++)
+			{
+			  DZ0=Mult(ComputeDerivative(Z0),DZ0);
+			  Z0=Compute(Z0);
+			}
+			//if(DZ0.x*DZ0.x+DZ0.y*DZ0.y<1.0)
+			{
+				
+				
+					float Angle = atan(float(DZ0.y),float(DZ0.x));
+					
+					float P = 0.5+0.5*cos(4*pi*pi/Angle);
+					
+					float R = float(length(DZ0));
+					P=P*P*P*P*smoothstep(1-0.5*abs(Angle/pi),1,R);
+					float Q = smoothstep(0,1,float((1-abs(DZ0.y*10))*smoothstep(-1,0,DZ0.x*10)));
+					vec3 Col2 = vec3(0);
+					Col2.r=R*(1-Q);
+					Col2.b=R*Q;
+					//Col.g+=(P);
+
+					Col2.g=clamp(cos(float(DZ0.y*30))+cos(float(DZ0.x*8-Time*0.5))-1,0,1);
+				if(L >0)
+				{
+					Col=Col+Col2*0.2;
+				}else{
+					Col=Col2;
+				}
+			}
+		
+		}
+	/*dvec2 J = dvec2(0,1);
 	dvec2 Z1 = dvec2(0);
+	Z1=Z;
 	dvec2 Z2 = IterationPoint;
-	/*for(int i =0;i<40;i++)
+	dvec2 Z3 = dvec2(1,0);
+	for(int i =0;i<8;i++)
 	{
 		Z1 = Compute(Z1);
+		//Z3 *= Div(dvec2(1,0),Z1-Compute(Z1));
 		//Z2 = Mult(Z2,Z2)+C+vec2(Zoom,0)/resolution;
 	}
-	Z=(Z1-IterationPoint);
+	Z3=(Z1);
     //Z-=J;
 			float s =1-exp(-5*float(length(Z)));
 			s=1;
-			float K = 0.5*atan(float(Z.y),float(Z.x))/pi;
+			float K = 0.5*atan(float(Z3.y),float(Z3.x))/pi;
 			vec3 Col2=vec3(0);
 			Col2.r = hueValue2(K) * s;
 			Col2.g = hueValue2(K + 0.33) * s;
 			Col2.b = hueValue2(K + 0.66) * s;
-			Col=LerpColor(Col,Col2,0.7);*/
+			Col=LerpColor(Col,Col2,0.7);
+			//if(abs(Z3.x)<0.05*(Z3.y))
+				//Col+=vec3(1,1,1)*0.3;*/
 	if(QuaternionJulia==1)
 	{
 		vec3 BaseColor=Col;

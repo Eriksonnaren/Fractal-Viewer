@@ -41,6 +41,9 @@
     <Reference Include="Mpir.NET, Version=0.4.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Mpir.NET.0.4.0\lib\net40\Mpir.NET.dll</HintPath>
     </Reference>
+    <Reference Include="NAudio, Version=1.10.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NAudio.1.10.0\lib\net35\NAudio.dll</HintPath>
+    </Reference>
     <Reference Include="OpenTK, Version=3.1.0.0, Culture=neutral, PublicKeyToken=bad199fe84eb3df4, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>bin\Debug\OpenTK.dll</HintPath>
@@ -67,6 +70,7 @@
   <ItemGroup>
     <Compile Include="AutoZoomController.cs" />
     <Compile Include="BigDecimal.cs" />
+    <Compile Include="Camera3d.cs" />
     <Compile Include="Complex.cs" />
     <Compile Include="CursorController.cs" />
     <Compile Include="CursorSystem.cs" />
@@ -81,6 +85,7 @@
     <Compile Include="GuiComponents\EmptyComponent.cs" />
     <Compile Include="GuiComponents\ExampleLocationComponent.cs" />
     <Compile Include="GuiComponents\FractalWindow.cs" />
+    <Compile Include="GuiComponents\GraphComponent.cs" />
     <Compile Include="GuiComponents\Slider.cs" />
     <Compile Include="GuiElement.cs" />
     <Compile Include="GuiHandler.cs" />
@@ -98,6 +103,8 @@
     <Compile Include="ShaderController.cs" />
     <Compile Include="GuiComponents\TextDisplay.cs" />
     <Compile Include="FileController.cs" />
+    <Compile Include="Shaders\BuddhaShaderController.cs" />
+    <Compile Include="SoundGenerator.cs" />
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>

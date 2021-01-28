@@ -1,11 +1,11 @@
-3d isomeric view
+*3d isomeric view
 *screenshot button
 reset button
 save-load functions and locations
-database of interesting stuff
+*database of interesting stuff
 buddhabrot mode
 change strength and direction of shadow effect
-distance estimate coloring instead of iteration count
+*distance estimate coloring instead of iteration count
 tutorial + tooltips
 coordinate info
 cross platform?
@@ -14,3 +14,7 @@ minibrot finder
 slider based variable in fractal function
 hue vs rgb button
 olc fractal
+incremental 3d ray march fractal
+manual typing for the iteration amount
+cobweb plot
+bifurcation diagram

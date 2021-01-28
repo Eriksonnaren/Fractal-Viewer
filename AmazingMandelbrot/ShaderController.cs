@@ -10,7 +10,7 @@ namespace AmazingMandelbrot
 {
     class ShaderController
     {
-        
+
         struct DataStruct
         {
             public double IterationCount;
@@ -24,9 +24,13 @@ namespace AmazingMandelbrot
         public delegate void FinishCompute();
         public int mWidth;
         public int mHeight;
-        public Complex CameraPos=new Complex(0,0);
-        public double Zoom=2;
-        public int Iterations =300;
+        public Complex CameraPos = new Complex(0, 0);
+        public double CameraAngleX = 0.7;
+        public double CameraAngleY = 0.7;
+        public double CameraDistance = 1.7;
+
+        public double Zoom = 2;
+        public int Iterations = 300;
         public bool Julia = false;
         public Complex JuliaPos;
         public static int ComputeProgramId;
@@ -50,26 +54,39 @@ namespace AmazingMandelbrot
         public bool UseOldAngle = false;
         public Complex[,] CoefficientArray;
         public FinishCompute FinishEvent;
-        public int PeriodHighlight=0;
+        public int PeriodHighlight = 10;
         public bool QuaternionJulia = false;
         public bool QuaternionJuliaCutoff = true;
         public Point PixelShift;
         public Matrix4 projectionMatrix;
-        public Color4[] ColorPalette=new Color4[] {Color4.Orange, Color4.DarkBlue, Color4.Cyan };
-        public Color4 InteriorColor=Color.Black;
-        public float[] PalettePositions=new float[] {0,0.33f,0.66f };
-        public int PaletteSize=3;
+        public Color4[] ColorPalette = new Color4[] { Color4.Orange, Color4.DarkBlue, Color4.Cyan };
+        public Color4 InteriorColor = Color.Black;
+        public float[] PalettePositions = new float[] { 0, 0.33f, 0.66f };
+        public int PaletteSize = 3;
         public double AverageIteration;
         int BufferExtractTimer = 0;
         DataStruct[] Buffer;
-        public Complex IterationPoint=new Complex(0,0);
+        public Complex IterationPoint = new Complex(0, 0);
         bool UpdateBackgroundTexture = true;
         public float CenterDotStrength = 0.8f;
-        public Complex FinalDotPosition = new Complex(0,0);
+        public Complex FinalDotPosition = new Complex(0, 0);
         public float FinalDotStrength = 0.0f;
+        public bool MeshActive{get; private set;}
+        public Camera3d camera3D;
+        public Matrix4 modelMatrix=Matrix4.Identity;
+        int MeshSize;
+        int MeshResolution;
+        int VertexBuffer;
+        int VertexArray;
+        int IndexBuffer;
+        Vector3[] Vertices;
+        uint[] Indices;
+        Size WindowResolution;
+        public bool DistanceEstimateEnabled=false;
+        public double DistanceEstimateColoringLerp = 0;
         public ShaderController(int Width,int Height)
         {
-            
+            WindowResolution = new Size(Width, Height);
             CoefficientArray = new Complex[,] {
                 {new Complex(0, 0),new Complex(1, 0)},
                 {new Complex(0, 0),new Complex(0, 0)},
@@ -93,6 +110,66 @@ namespace AmazingMandelbrot
             IntermediateShaderBuffer = GenerateShaderBuffer(BufferSize);
             
         }
+        public void GenerateMesh(int Size,int Resolution)
+        {
+            MeshSize = Size;
+            uint s = (uint)MeshSize;
+            MeshResolution = Resolution;
+            Vertices = new Vector3[MeshSize * MeshSize];
+            Indices=new uint[((MeshSize-1) * (MeshSize-1))*6];
+            Random r = new Random();
+            for (int i = 0; i < MeshSize * MeshSize; i++)
+            {
+                float x = i % MeshSize;
+                float y = i / MeshSize;
+                Vertices[i] = (new Vector3(x, y, 0) *MeshResolution)/ MeshSize;
+            }
+            int k = 0;
+            for (uint i = 0; i < MeshSize - 1 ; i++)
+            {
+                for (uint j = 0; j < MeshSize - 1; j++)
+                {
+                    uint u = (i + j * s);
+                    Indices[k++] = u;
+                    Indices[k++] = u + 1;
+                    Indices[k++] = u + s;
+                    Indices[k++] = u + s + 1;
+                    Indices[k++] = u + 1;
+                    Indices[k++] = u + s;
+                }
+            }
+            GL.GenBuffers(1, out VertexBuffer);
+            GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBuffer);
+            GL.BufferData(BufferTarget.ArrayBuffer, (IntPtr)(Vertices.Length * sizeof(float)*3), Vertices, BufferUsageHint.StaticDraw);
+            GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
+
+            GL.GenBuffers(1, out IndexBuffer);
+            GL.BindBuffer(BufferTarget.ElementArrayBuffer, IndexBuffer);
+            GL.BufferData(BufferTarget.ElementArrayBuffer, (IntPtr)(Indices.Length * sizeof(uint)), Indices, BufferUsageHint.StaticDraw);
+            GL.BindBuffer(BufferTarget.ElementArrayBuffer, 0);
+
+            // create new vertex array object
+            GL.GenVertexArrays(1, out VertexArray);
+
+            // bind the object so we can modify it
+            GL.BindVertexArray(VertexArray);
+
+            // bind the vertex buffer object
+            GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBuffer);
+
+            // set all attributes
+            //foreach (var attribute in attributes)
+                //attribute.Set(program);
+
+            // enable and set attribute
+            GL.EnableVertexAttribArray(0);
+            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float,
+                false, 3, 0);
+            // unbind objects to reset state
+            GL.BindVertexArray(0);
+            GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
+            //Console.WriteLine(GL.GetError());
+        }
         public static void GenreateComputeProgram()
         {
             
@@ -110,6 +187,7 @@ namespace AmazingMandelbrot
 
         public void Compute(bool updateBackgroundTexture = true)
         {
+            
             UpdateBackgroundTexture = updateBackgroundTexture;
             BufferExtractTimer = 20;
             projectionMatrix = fractalWindow.projectionMatrix;
@@ -130,6 +208,7 @@ namespace AmazingMandelbrot
             GL.BindTexture(TextureTarget.Texture2D, ReverseTexHandle);
             GL.Uniform1(GL.GetUniformLocation(ProgramId, "reverseTex"), 0);
             GL.UniformMatrix4(GL.GetUniformLocation(ProgramId, "projectionMatrix"), false, ref projectionMatrix);
+            
             //GL.Uniform1(GL.GetUniformLocation(ProgramId, "destTex"), IntermediateTexHandle);
 
             GL.BindBuffer(BufferTarget.ShaderStorageBuffer, IntermediateShaderBuffer);
@@ -170,7 +249,9 @@ namespace AmazingMandelbrot
                 
                 GL.Uniform1(GL.GetUniformLocation(ComputeProgramId, "UseOldAngle"), UseOldAngle ? 1 : 0);
                 GL.Uniform1(GL.GetUniformLocation(ComputeProgramId, "OldAngle"), OldAngle);
-                
+                GL.Uniform1(GL.GetUniformLocation(ComputeProgramId, "EnableDistanceEstimate"), (DistanceEstimateEnabled||MeshActive)?1:0); 
+
+
             }
             //GL.DispatchCompute(mWidth / GroupSize + 1, mHeight / GroupSize + 1, 1); // width * height threads in blocks of 16^2
             //GL.MemoryBarrier(MemoryBarrierFlags.AllBarrierBits);
@@ -187,12 +268,13 @@ namespace AmazingMandelbrot
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
             GL.UseProgram(0);
             GL.BindTexture(TextureTarget.Texture2D, 0);
-            
             FinishEvent?.Invoke();
         }
         public void Draw()
         {
-            if(BufferExtractTimer>0)
+            //Matrix3 Rot = Matrix3.CreateRotationZ(0.02f);
+            //camera3D.CameraVector *= Rot;
+            if (BufferExtractTimer>0)
             {
                 BufferExtractTimer--;
                 if(BufferExtractTimer==0)
@@ -227,6 +309,9 @@ namespace AmazingMandelbrot
             //GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "reverseTex"), ReverseTexHandle);
 
             GL.UniformMatrix4(GL.GetUniformLocation(DisplayProgramId, "projectionMatrix"), false, ref projectionMatrix);
+            Matrix4 I = Matrix4.Identity;
+            GL.UniformMatrix4(GL.GetUniformLocation(DisplayProgramId, "viewMatrix"), false, ref  I);
+            GL.UniformMatrix4(GL.GetUniformLocation(DisplayProgramId, "modelMatrix"), false, ref I);
             GL.Uniform2(GL.GetUniformLocation(DisplayProgramId, "resolution"), mWidth, mHeight);
 
             GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "Zoom"), Zoom);
@@ -270,16 +355,29 @@ namespace AmazingMandelbrot
             GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "CenterDotStrength"), CenterDotStrength);
             GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "FinalDotStrength"), FinalDotStrength);
             GL.Uniform2(GL.GetUniformLocation(DisplayProgramId, "FinalDotPosition"), FinalDotPosition.real, FinalDotPosition.imag);
+            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "DistanceEstimateColoringLerp"), (float)DistanceEstimateColoringLerp);
             //GL.DispatchCompute(mWidth / GroupSize + 1, mHeight / GroupSize + 1, 1);
 
-            GL.Color3(1.0,1.0,1.0);
+
             //GL.BindTexture(TextureTarget.Texture2D, ImageTexHandle);
             //GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
             //GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+            if (MeshActive)
+            {
+                GL.UniformMatrix4(GL.GetUniformLocation(DisplayProgramId, "projectionMatrix"), false, ref camera3D.ProjectMatrix);
+                GL.UniformMatrix4(GL.GetUniformLocation(DisplayProgramId, "viewMatrix"), false, ref camera3D.ViewMatrix);
+                GL.UniformMatrix4(GL.GetUniformLocation(DisplayProgramId, "modelMatrix"), false, ref modelMatrix); 
+                GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "MeshMode"), 1);
+                //GL.UseProgram(0);
+                Render3d();
+            }
+            else
+            {
+                GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "MeshMode"), 0);
+                GL.Color3(1.0, 1.0, 1.0);
+                GL.Enable(EnableCap.Texture2D);
 
-            GL.Enable(EnableCap.Texture2D);
-            
-            
+
                 GL.Begin(PrimitiveType.Quads);
                 float realWidth = mWidth;
                 float realHeight = mHeight;
@@ -288,12 +386,10 @@ namespace AmazingMandelbrot
                 GL.TexCoord2(1.0f, 1.0f); GL.Vertex2(realWidth, realHeight);
                 GL.TexCoord2(0.0f, 1.0f); GL.Vertex2(0f, realHeight);
                 GL.End();
-            
-            GL.Disable(EnableCap.Texture2D);
-            
-                Draw2();
-            
-            //Compute();
+
+                GL.Disable(EnableCap.Texture2D);
+            }
+            Draw2();
         }
         public void Draw2()
         {
@@ -318,7 +414,7 @@ namespace AmazingMandelbrot
             GL.BindBuffer(BufferTarget.ShaderStorageBuffer, 0);
 
             GL.Enable(EnableCap.Texture2D);
-            GL.Color3(1.0, 1.0, 1.0);
+            GL.Color3(0, 0, 0);
             if (UpdateBackgroundTexture)
             {
                 GL.Begin(PrimitiveType.Quads);
@@ -333,8 +429,81 @@ namespace AmazingMandelbrot
             GL.UseProgram(0);
             GL.BindTexture(TextureTarget.Texture2D, 0);
         }
+        public void SetMeshActive(bool Active)
+        {
+            if (MeshActive != Active)
+            {
+                MeshActive = Active;
+                if (MeshActive)
+                {
+                    Size temp = WindowResolution;
+                    Resize(MeshResolution,MeshResolution);
+                    WindowResolution = temp;
+                    
+                }
+                else
+                {
+                    Resize(WindowResolution.Width, WindowResolution.Height);
+                }
+                Compute();
+            }
+        }
+        void Render3d()
+        {
+            float realWidth = mWidth;
+            float realHeight = mHeight;
+            double C1 = Math.Cos(CameraAngleX);
+            double S1 = Math.Sin(CameraAngleX);
+            double C2 = Math.Cos(CameraAngleY);
+            double S2 = Math.Sin(CameraAngleY);
+            camera3D.CameraVector = new Vector3((float)(C2 * S1), (float)(C2* C1), -(float)(S2))*500* (float)CameraDistance;
+            camera3D.CameraCenter = new Vector3(mWidth/2, mHeight/2, 0);
+            camera3D.Prepare3d();
+            
+            GL.Color3(1.0, 1.0, 1.0);
+            /*GL.Enable(EnableCap.Texture2D);
+            
+            GL.Begin(PrimitiveType.Quads);
+            
+            GL.TexCoord2(0.0f, 0.0f); GL.Vertex3(0f, 0f,0);
+            GL.TexCoord2(1.0f, 0.0f); GL.Vertex3(realWidth, 0f,0);
+            GL.TexCoord2(1.0f, 1.0f); GL.Vertex3(realWidth, realHeight,0);
+            GL.TexCoord2(0.0f, 1.0f); GL.Vertex3(0f, realHeight,0);
+            GL.End();*/
+
+            /*GL.Disable(EnableCap.Texture2D);
+            GL.Color3(1.0, 0, 0);
+            GL.Begin(PrimitiveType.Quads);
+            GL.Vertex3(0f, 0f, 0);
+            GL.Vertex3(realWidth, 0f, realHeight / 2);
+            GL.Vertex3(realWidth, realHeight, 0);
+            GL.Vertex3(0f, realHeight, realHeight/2);
+            GL.End();*/
+
+
+            //fractalWindow.DrawCuboid(new Vector3(0,0,0), new Vector3(realWidth, realHeight, realHeight / 5), Color.White);
+            GL.BindBuffer(BufferTarget.ArrayBuffer, VertexArray);
+            GL.Color3(1.0f, 1.0f, 1.0f);
+            GL.EnableClientState(ArrayCap.VertexArray);
+            GL.BindBuffer(BufferTarget.ArrayBuffer, VertexBuffer);
+            GL.VertexPointer(3, VertexPointerType.Float, sizeof(float)*3, 0);
+            GL.BindBuffer(BufferTarget.ElementArrayBuffer, IndexBuffer);
+
+            GL.DrawElements(BeginMode.Triangles, Indices.Length, DrawElementsType.UnsignedInt, 0);
+
+            GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
+            GL.BindBuffer(BufferTarget.ElementArrayBuffer, 0);
+            GL.DisableClientState(ArrayCap.VertexArray);
+
+            GL.BindVertexArray(0);
+            GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
+            GL.UseProgram(0);
+
+            camera3D.End3d();
+        }
         public int GenerateTex(string Name)
         {
+            
             int texHandle = GL.GenTexture();
             GL.ActiveTexture(TextureUnit.Texture0);
             GL.BindTexture(TextureTarget.Texture2D, texHandle);
@@ -387,6 +556,7 @@ namespace AmazingMandelbrot
         {
             mWidth = w;
             mHeight = h;
+            WindowResolution = new Size(w, h);
             Buffer = new DataStruct[mWidth * mHeight];
             int BufferSize = mWidth * mHeight * (sizeof(double) * 4 + sizeof(double) * 2);
             GL.DeleteTexture(ImageTexHandle);

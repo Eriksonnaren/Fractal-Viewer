@@ -18,9 +18,11 @@ namespace AmazingMandelbrot
         public bool JuliaActive;
         public bool OrbitActive;
         public bool JuliaOrbitActive;
+        public bool SoundActive;
 
         public FractalWindow JuliaButton;
         public FractalWindow OrbitButton;
+        public EmptyComponent SoundButton;
 
         public FractalWindow JuliaOrbitButton;
         public FractalWindow JuliaPeriodButton;
@@ -45,20 +47,27 @@ namespace AmazingMandelbrot
             //AllButtons[0] = PinButton = new EmptyComponent(new RectangleF(0, 0, ButtonSize, ButtonSize));
             JuliaButton = new FractalWindow(new RectangleF(0, 0, size, size));
             OrbitButton = new FractalWindow(new RectangleF(0, 0, size, size));
-            mainController = new CursorController(mainWindow, 
+            SoundButton = new EmptyComponent(new RectangleF(0, 0, size, size));
+            
+            mainController = new CursorController(mainWindow,
                 new GuiElement[] {
-                    JuliaButton,
-                    OrbitButton
+                    OrbitButton,
+                    SoundButton,
+                    JuliaButton
+                    
                 });
             JuliaPeriodButton = new FractalWindow(new RectangleF(0, 0, size, size));
             JuliaOrbitButton = new FractalWindow(new RectangleF(0, 0, size, size));
             juliaController = new CursorController(JuliaWindow,
                 new GuiElement[]
                 {
-                    JuliaPeriodButton,
-                    JuliaOrbitButton
+                    JuliaOrbitButton,
+                    JuliaPeriodButton
+                    
                 }
                 );
+            SoundButton.LateDraw += SoundButtonLateDraw;
+            SoundButton.MouseDownEvent += SoundButtonClick;
             mainController.MenuUpdatedEvent += MenuUpdated;
             mainController.PositionEvent += CursorChanged;
             juliaController.MenuUpdatedEvent += JuliaMenuUpdated;
@@ -155,7 +164,7 @@ namespace AmazingMandelbrot
         }
         void FinalDotUpdate()
         {
-            if (juliaController.ButtonsActive[0])
+            if (juliaController.ButtonsActive[1])
             {
                 JuliaWindow.fractalMath.CoefficientArray = JuliaWindow.Controller.CoefficientArray;
                 JuliaWindow.fractalMath.SetCoefficients(JuliaWindow.Controller.JuliaPos);
@@ -262,7 +271,7 @@ namespace AmazingMandelbrot
         
         void OrbitClick(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
         {
-            OrbitActive = mainController.ButtonsActive[1];
+            OrbitActive = mainController.ButtonsActive[0];
             if (!OrbitActive)
             {
                 MainWindow.Controller.PeriodHighlight = 0;
@@ -279,19 +288,50 @@ namespace AmazingMandelbrot
         }
         void JuliaOrbitClick(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
         {
-            JuliaOrbitActive = juliaController.ButtonsActive[1];
+            JuliaOrbitActive = juliaController.ButtonsActive[0];
             JuliaWindow.OrbitActive = JuliaOrbitActive;
             JuliaWindow.OrbitPosition = juliaController.CursorWorldPosition;
         }
         void JuliaClick(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
         {
-            JuliaActive = mainController.ButtonsActive[0];
+            JuliaActive = mainController.ButtonsActive[2];
             JuliaWindow.Enabled = JuliaActive;
             UpdateJulia();
         }
         void JuliaPeriodClick(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
         {
             FinalDotUpdate();
+        }
+        void SoundButtonClick(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
+        {
+            SoundActive = mainController.ButtonsActive[1];
+        }
+        void SoundButtonLateDraw(GuiElement Sender, Main M)
+        {
+            GL.Color3(Color.LightGray);
+            GL.PushMatrix();
+            
+            
+            float w = CursorController.ButtonSize;
+            float s = w * 0.2f;
+            GL.Translate(w*0.45, w/2, 0);
+            GL.Begin(PrimitiveType.Polygon);
+            GL.Vertex2(0,s);
+            GL.Vertex2(s * 0.5, s*1.5);
+            GL.Vertex2(s * 0.5, -s * 1.5);
+            GL.Vertex2(0, -s);
+            GL.Vertex2(-s, -s);
+            GL.Vertex2(-s, s);
+            GL.End();
+            GL.LineWidth(3);
+            GL.Begin(PrimitiveType.Lines);
+            GL.Vertex2(s, s);
+            GL.Vertex2(s, -s);
+            s *= 1.5f;
+            GL.Vertex2(s, s);
+            GL.Vertex2(s, -s);
+            GL.End();
+            GL.PopMatrix();
         }
         void Julia3dClick(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
         {
