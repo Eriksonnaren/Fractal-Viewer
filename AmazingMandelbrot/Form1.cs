@@ -39,8 +39,8 @@ namespace AmazingMandelbrot
             //string S = Application.LocalUserAppDataPath;
             
             GraphicsMode graphicsMode = new GraphicsMode(new ColorFormat(8, 8, 8, 8), 24,8,4);
-            GLcontrol = new GLControl(graphicsMode, 6, 4, GraphicsContextFlags.ForwardCompatible);
-            //GLcontrol = new GLControl(graphicsMode);
+            //GLcontrol = new GLControl(graphicsMode, 6, 4, GraphicsContextFlags.ForwardCompatible);
+            GLcontrol = new GLControl(graphicsMode);
 
             GLcontrol.Dock = DockStyle.Fill;
             WindowState = FormWindowState.Maximized;

@@ -42,12 +42,12 @@ namespace AmazingMandelbrot
             public OperationType OpType;
             public Node N1;
             public Node N2;
-            
+
             public Node(double num)
             {
                 Num = num;
                 Var = ' ';
-                Type =  NodeType.Number;
+                Type = NodeType.Number;
                 OpType = OperationType.None;
             }
             public Node(char var)
@@ -57,7 +57,7 @@ namespace AmazingMandelbrot
                 Type = NodeType.Variable;
                 OpType = OperationType.None;
             }
-            public Node(OperationType opType,Node n1,Node n2)
+            public Node(OperationType opType, Node n1, Node n2)
             {
                 Num = 0;
                 Var = ' ';

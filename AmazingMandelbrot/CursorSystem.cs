@@ -19,6 +19,7 @@ namespace AmazingMandelbrot
         public bool OrbitActive;
         public bool JuliaOrbitActive;
         public bool SoundActive;
+        public bool OffsetActive;
 
         public FractalWindow JuliaButton;
         public FractalWindow OrbitButton;
@@ -26,6 +27,7 @@ namespace AmazingMandelbrot
 
         public FractalWindow JuliaOrbitButton;
         public FractalWindow JuliaPeriodButton;
+        public EmptyComponent JuliaOffsetButton;
 
         public FractalWindow Julia3dButton;
         public FractalWindow Julia3dCutoffButton;
@@ -58,12 +60,13 @@ namespace AmazingMandelbrot
                 });
             JuliaPeriodButton = new FractalWindow(new RectangleF(0, 0, size, size));
             JuliaOrbitButton = new FractalWindow(new RectangleF(0, 0, size, size));
+            JuliaOffsetButton = new EmptyComponent(new RectangleF(0, 0, size, size));
             juliaController = new CursorController(JuliaWindow,
                 new GuiElement[]
                 {
                     JuliaOrbitButton,
-                    JuliaPeriodButton
-                    
+                    JuliaPeriodButton,
+                    JuliaOffsetButton
                 }
                 );
             SoundButton.LateDraw += SoundButtonLateDraw;
@@ -117,6 +120,8 @@ namespace AmazingMandelbrot
             }
             JuliaPeriodButton.Controller.FinalDotPosition = Z;
 
+            
+
             //JuliaWindow = new FractalWindow(new RectangleF(20, 20, JuliaWindowSize, JuliaWindowSize));
             JuliaWindow.Controller.Julia = true;
             JuliaWindow.Enabled = false;
@@ -153,6 +158,7 @@ namespace AmazingMandelbrot
 
             JuliaOrbitButton.MouseDownEvent += JuliaOrbitClick;
             JuliaPeriodButton.MouseDownEvent += JuliaPeriodClick;
+            JuliaOffsetButton.MouseDownEvent += JuliaOffsetClick;
         }
         public void Update()
         {
@@ -203,6 +209,15 @@ namespace AmazingMandelbrot
             JuliaWindow.OrbitActive = JuliaOrbitActive;
             JuliaWindow.OrbitPosition = juliaController.CursorWorldPosition;
             FinalDotUpdate();
+            if (OffsetActive)
+            {
+                MainWindow.Controller.OffsetPos = juliaController.CursorWorldPosition;
+                MainWindow.Controller.Compute();
+            }
+            else
+            {
+                MainWindow.Controller.OffsetPos = new Complex(0, 0);
+            }
         }
         public void ComputeAll()
         {
@@ -301,6 +316,19 @@ namespace AmazingMandelbrot
         void JuliaPeriodClick(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
         {
             FinalDotUpdate();
+        }
+        void JuliaOffsetClick(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
+        {
+            OffsetActive = juliaController.ButtonsActive[2];
+            if (OffsetActive)
+            {
+                MainWindow.Controller.OffsetPos = juliaController.CursorWorldPosition;
+                
+            }else
+            {
+                MainWindow.Controller.OffsetPos = new Complex(0, 0);
+            }
+            MainWindow.Controller.Compute();
         }
         void SoundButtonClick(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
         {

@@ -33,6 +33,7 @@ namespace AmazingMandelbrot
         public int Iterations = 300;
         public bool Julia = false;
         public Complex JuliaPos;
+        public Complex OffsetPos;
         public static int ComputeProgramId;
         public static int DisplayProgramId;
         public static int BackCopyProgramId;
@@ -84,6 +85,11 @@ namespace AmazingMandelbrot
         Size WindowResolution;
         public bool DistanceEstimateEnabled=false;
         public double DistanceEstimateColoringLerp = 0;
+        public BuddhaShaderController buddhaController;
+        public bool canUseBuddhaMode { get; private set; } = false;
+        public bool buddhaActive;
+        bool BuddhaReset;
+
         public ShaderController(int Width,int Height)
         {
             WindowResolution = new Size(Width, Height);
@@ -187,7 +193,8 @@ namespace AmazingMandelbrot
 
         public void Compute(bool updateBackgroundTexture = true)
         {
-            
+            BuddhaShaderController.BlockBuddhaShader = true;//hotfix to prevent program from freezing
+            BuddhaReset = true;
             UpdateBackgroundTexture = updateBackgroundTexture;
             BufferExtractTimer = 20;
             projectionMatrix = fractalWindow.projectionMatrix;
@@ -227,6 +234,8 @@ namespace AmazingMandelbrot
 
             GL.Uniform1(GL.GetUniformLocation(ProgramId, "JuliaReal"), JuliaPos.real);
             GL.Uniform1(GL.GetUniformLocation(ProgramId, "JuliaImag"), JuliaPos.imag);
+            GL.Uniform1(GL.GetUniformLocation(ProgramId, "OffsetReal"), OffsetPos.real);
+            GL.Uniform1(GL.GetUniformLocation(ProgramId, "OffsetImag"), OffsetPos.imag);
 
             GL.Uniform1(GL.GetUniformLocation(ProgramId, "ArrayMaxZ"), CoefficientArray.GetLength(0));
             GL.Uniform1(GL.GetUniformLocation(ProgramId, "ArrayMaxC"), CoefficientArray.GetLength(1));
@@ -255,20 +264,32 @@ namespace AmazingMandelbrot
             }
             //GL.DispatchCompute(mWidth / GroupSize + 1, mHeight / GroupSize + 1, 1); // width * height threads in blocks of 16^2
             //GL.MemoryBarrier(MemoryBarrierFlags.AllBarrierBits);
-
+            //GL.UseProgram(0);
             GL.Enable(EnableCap.Texture2D);
+            //Console.WriteLine("Draw fractal quad at time: {0}", Main.stopwatch.Elapsed.TotalMilliseconds);
             GL.Color3(1.0, 1.0, 1.0);
             GL.Begin(PrimitiveType.Quads);
-            GL.TexCoord2(0.0f, 0.0f); GL.Vertex2(0f, 0f);
-            GL.TexCoord2(1.0f, 0.0f); GL.Vertex2(mWidth, 0f);
-            GL.TexCoord2(1.0f, 1.0f); GL.Vertex2(mWidth, mHeight);
-            GL.TexCoord2(0.0f, 1.0f); GL.Vertex2(0f, mHeight);
+            GL.TexCoord2(0.0f, 0.0f);
+            GL.Vertex2(0f, 0f);
+            GL.TexCoord2(1.0f, 0.0f);
+            GL.Vertex2(mWidth, 0f);
+            GL.TexCoord2(1.0f, 1.0f);
+            GL.Vertex2(mWidth, mHeight);
+            GL.TexCoord2(0.0f, 1.0f);
+            GL.Vertex2(0f, mHeight);
             GL.End();
             GL.Disable(EnableCap.Texture2D);
             GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
             GL.UseProgram(0);
             GL.BindTexture(TextureTarget.Texture2D, 0);
             FinishEvent?.Invoke();
+            if(buddhaActive)
+            {
+                buddhaController.SetCamera(CameraPos,Zoom);
+                buddhaController.Start();
+                buddhaController.CoefficientArray = CoefficientArray;
+                buddhaController.OffsetPos = OffsetPos;
+            }
         }
         public void Draw()
         {
@@ -356,6 +377,15 @@ namespace AmazingMandelbrot
             GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "FinalDotStrength"), FinalDotStrength);
             GL.Uniform2(GL.GetUniformLocation(DisplayProgramId, "FinalDotPosition"), FinalDotPosition.real, FinalDotPosition.imag);
             GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "DistanceEstimateColoringLerp"), (float)DistanceEstimateColoringLerp);
+            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "BuddhaActive"), canUseBuddhaMode && buddhaActive ? 1:0);
+            if(canUseBuddhaMode && buddhaActive)
+            {
+                GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "BuddhaTexR"), buddhaController.colorTexR);
+                GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "BuddhaTexG"), buddhaController.colorTexG);
+                GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "BuddhaTexB"), buddhaController.colorTexB);
+                GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "BuddhaReset"), BuddhaReset ? 1 : 0);
+            }
+            BuddhaReset = false;
             //GL.DispatchCompute(mWidth / GroupSize + 1, mHeight / GroupSize + 1, 1);
 
 
@@ -377,7 +407,7 @@ namespace AmazingMandelbrot
                 GL.Color3(1.0, 1.0, 1.0);
                 GL.Enable(EnableCap.Texture2D);
 
-
+                //Console.WriteLine("Draw rendering quad at time: {0}", Main.stopwatch.Elapsed.TotalMilliseconds);
                 GL.Begin(PrimitiveType.Quads);
                 float realWidth = mWidth;
                 float realHeight = mHeight;
@@ -500,6 +530,11 @@ namespace AmazingMandelbrot
             GL.UseProgram(0);
 
             camera3D.End3d();
+        }
+        public void SetupBuddhaController()
+        {
+            buddhaController = new BuddhaShaderController(this);
+            canUseBuddhaMode = true;
         }
         public int GenerateTex(string Name)
         {

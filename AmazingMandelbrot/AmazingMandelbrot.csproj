@@ -103,7 +103,7 @@
     <Compile Include="ShaderController.cs" />
     <Compile Include="GuiComponents\TextDisplay.cs" />
     <Compile Include="FileController.cs" />
-    <Compile Include="Shaders\BuddhaShaderController.cs" />
+    <Compile Include="BuddhaShaderController.cs" />
     <Compile Include="SoundGenerator.cs" />
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
@@ -114,6 +114,7 @@
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <None Include="Shaders\BackCopyFrag.glsl" />
+    <None Include="Shaders\BuddhaCompute.glsl" />
     <None Include="Shaders\DisplayFrag.glsl" />
     <None Include="Shaders\DisplayShader.glsl" />
     <None Include="Shaders\DisplayVert.glsl" />

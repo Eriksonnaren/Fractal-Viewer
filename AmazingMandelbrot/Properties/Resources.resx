@@ -124,6 +124,9 @@
   <data name="BackCopyVert" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\shaders\backcopyvert.glsl;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
+  <data name="BuddhaCompute" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\shaders\buddhacompute.glsl;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
   <data name="DisplayFrag" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\shaders\displayfrag.glsl;System.Byte[], mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>

@@ -83,6 +83,16 @@ namespace AmazingMandelbrot.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Byte[].
         /// </summary>
+        internal static byte[] BuddhaCompute {
+            get {
+                object obj = ResourceManager.GetObject("BuddhaCompute", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Byte[].
+        /// </summary>
         internal static byte[] DisplayFrag {
             get {
                 object obj = ResourceManager.GetObject("DisplayFrag", resourceCulture);
@@ -112,7 +122,15 @@ namespace AmazingMandelbrot.Properties {
         
         /// <summary>
         ///   Looks up a localized string similar to function:z^2+c
-        ///location:.
+        ///location:-0,154398688452751|-1,03086170101989|4,7049856364518546E-09|400
+        ///location:-0,771621034381558|-0,12581010385341|4,0696977077174613E-07|600
+        ///location:0,285071335737263|0,0107776878352666|6,9534600677953306E-06|400
+        ///location:-1,08770457305805|-0,252329836531033|1,2058363578422142E-07|300
+        ///function:z^3+c
+        ///location:0,00305744984908032|-1,10406108239955|5,359272701520952E-08|300
+        ///function:z^2(1-zc)+c
+        ///function:z^2(1-z-c)+c
+        ///function:z^2(1-iz+(i-1)c)+c.
         /// </summary>
         internal static string ExampleLocations {
             get {

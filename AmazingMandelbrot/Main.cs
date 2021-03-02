@@ -42,7 +42,7 @@ namespace AmazingMandelbrot
         List<MinibrotFinder.MinibrotInfo> AllMinibrots=new List<MinibrotFinder.MinibrotInfo>();
         const int MinimumMinibrotAmount = 10;
         const int MinibrotWindowSize=120;
-        Stopwatch stopwatch = new Stopwatch();
+        public static Stopwatch stopwatch = Stopwatch.StartNew();
         double T = 0;
         public Complex[,] MainCoefficientArray;
         public Complex[,] OldCoefficientArray;
@@ -73,6 +73,8 @@ namespace AmazingMandelbrot
         Slider SoundVolumeSlider;
         Slider SoundFrequencySlider;
         EmptyComponent SoundContainer;
+        EmptyComponent BuddhabrotProgressbar;
+        FractalWindow BuddhaToggleButton;
         public Main(Size Size)
         {
             soundGenerator = new SoundGenerator();
@@ -88,6 +90,8 @@ namespace AmazingMandelbrot
             MainFractalWindow = new FractalWindow(new Rectangle(0, 0, Size.Width, Size.Height));
             MainFractalWindow.LateDraw += MainDrawLate;
             GuiHandler.Elements.Add(MainFractalWindow);
+            MainFractalWindow.Controller.SetupBuddhaController();
+
             int Y = 10;
             PolynomialTextDisplay = new TextDisplay(new RectangleF(10, Y, 300, 40));
             GuiHandler.Elements.Add(PolynomialTextDisplay);
@@ -147,6 +151,17 @@ namespace AmazingMandelbrot
             MeshToggleButton.MouseDownEvent += MeshToggleClick;
             GuiHandler.Elements.Add(MeshToggleButton);
 
+            BuddhabrotProgressbar = new EmptyComponent(new RectangleF((Size.Width-200)/2,20,200,30));
+            BuddhabrotProgressbar.LateDraw += BuddhabrotProgressbarDrawLate;
+            BuddhabrotProgressbar.Enabled = false;
+            BuddhabrotProgressbar.DrawFrame = false;
+            GuiHandler.Elements.Add(BuddhabrotProgressbar);
+
+            BuddhaToggleButton = new FractalWindow(new Rectangle(10, Y += 80, 70, 70));
+            BuddhaToggleButton.EnableInteraction = false;
+            BuddhaToggleButton.MouseDownEvent += BuddhaToggleClick;
+            GuiHandler.Elements.Add(BuddhaToggleButton);
+
             float SoundSlideWidth = 30;
             SoundContainer = new EmptyComponent(new RectangleF(10,Size.Height-210, SoundSlideWidth*2+30, 200));
             SoundVolumeSlider = new Slider(new RectangleF(10, SoundSlideWidth+20, SoundSlideWidth, SoundContainer.Rect.Height-(SoundSlideWidth + 30)));
@@ -166,7 +181,7 @@ namespace AmazingMandelbrot
             //MinibrotContainer = new EmptyComponent(new RectangleF(10, Size.Height - H-10, Size.Width-20,H));
             //GuiHandler.Elements.Add(MinibrotContainer);
             //MinibrotContainer.Enabled = false;
-            FourierPlot = new GraphComponent(new RectangleF(10,Size.Height-210,500,200),Color.Red);
+            FourierPlot = new GraphComponent(new RectangleF(120,Size.Height-210,500,200),Color.Red);
             //GuiHandler.Elements.Add(FourierPlot);
             FourierPlot.DrawLines = false;
             UpdatePolynomialTextDisplay();
@@ -177,8 +192,9 @@ namespace AmazingMandelbrot
             CursorSystem = new MainCursorSystem(MainFractalWindow);
             MainFractalWindow.MouseDownEvent += MainWindowClick;
             MainFractalWindow.MouseUpEvent += MainRelease;
-
             CursorSystem.JuliaWindow.Enabled = true;
+            
+
             for (int i = 0; i < CursorSystem.juliaController.AllButtons.Length; i++)
             {
                 CursorSystem.juliaController.AllButtons[i].Enabled = true;
@@ -193,7 +209,9 @@ namespace AmazingMandelbrot
             MainFractalWindow.Controller.Compute();
             ColorMenuButton.Controller.Compute();
             MeshToggleButton.Controller.Compute();
-            
+            BuddhaToggleButton.Controller.Compute();
+
+
             for (int i = 0; i < CursorSystem.juliaController.AllButtons.Length; i++)
             {
                 CursorSystem.juliaController.AllButtons[i].Enabled = false;
@@ -379,6 +397,7 @@ namespace AmazingMandelbrot
                 {
                     CursorSystem.UpdateJulia();
                 }
+                
             }
             else
             {
@@ -412,6 +431,10 @@ namespace AmazingMandelbrot
                     soundGenerator.Stop();
                 }
             }
+            BuddhabrotProgressbar.Enabled = MainFractalWindow.Controller.buddhaActive && MainFractalWindow.Controller.buddhaController.Working;
+            
+                 
+            
         }
         public double Beizer(double X)
         {
@@ -528,6 +551,7 @@ namespace AmazingMandelbrot
             }
             if (CompassActive)
             {
+
                 GL.PushMatrix();
                 double Rad = MainFractalWindow.Rect.Height * CompassRad;
                 double thickness = 20;
@@ -603,7 +627,9 @@ namespace AmazingMandelbrot
             }
             if(CursorSystem.OrbitActive)
             {
-                
+                time += 0.003;
+                //CursorSystem.mainController.CursorWorldPosition=new Complex(Math.Cos(time)- Math.Cos(time*2)/2, Math.Sin(time) - Math.Sin(time * 2) / 2)*0.5*1.02;
+                //CursorSystem.mainController.MainComputed();
                 int midStep = 100;
                 int StepSize = 30;
                 double PreviousHeight = 0;
@@ -666,6 +692,7 @@ namespace AmazingMandelbrot
                 
             }
         }
+        double time = 0;
         public void CompassDrawLate(GuiElement Sender, Main M)
         {
             double angle = MainFractalWindow.Controller.Angle*180/Math.PI;
@@ -861,6 +888,20 @@ namespace AmazingMandelbrot
             GL.End();
             GL.PopMatrix();
         }
+        void BuddhabrotProgressbarDrawLate(GuiElement Sender, Main M)
+        {
+            BuddhaShaderController controller = MainFractalWindow.Controller.buddhaController;
+            float F1 = 1-controller.RecurseLevel / (float)controller.MaxRecursionLevel;
+            if (controller.MaxRecursionLevel == 0)
+                F1 = 1;
+            float F2 = controller.CurrentFinalSample / (float)(controller.FinalSampleDensity * controller.FinalSampleDensity);
+            float h = BuddhabrotProgressbar.Rect.Height;
+            float w = BuddhabrotProgressbar.Rect.Width;
+            GL.Color3(0.5,0.5,1.0);
+            GL.Rect(0,0,w*F1,h/2);
+            GL.Color3(0.0, 0.8, 1.0);
+            GL.Rect(0, h/2, w * F2, h);
+        }
         void MeshToggleClick(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
         {
             MainFractalWindow.Controller.SetMeshActive(!MainFractalWindow.Controller.MeshActive);
@@ -868,6 +909,11 @@ namespace AmazingMandelbrot
             MainFractalWindow.EnableInteraction = !CompassActive;
             MainFractalWindow.Controller.UseOldAngle = CompassActive;
             MainFractalWindow.Controller.OldAngle = MainFractalWindow.Controller.Angle;
+        }
+        void BuddhaToggleClick(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
+        {
+            MainFractalWindow.Controller.buddhaActive = !MainFractalWindow.Controller.buddhaActive;
+            MainFractalWindow.Controller.Compute();
         }
         public void CompassClicked(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
         {

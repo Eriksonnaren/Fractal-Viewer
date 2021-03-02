@@ -18,3 +18,5 @@ C:\Users\erikh\OneDrive\Visual Studio\AmazingMandelbrot\AmazingMandelbrot\obj\Re
 C:\Users\erikh\OneDrive\Visual Studio\AmazingMandelbrot\AmazingMandelbrot\obj\Release\AmazingMandelbrot.csproj.CopyComplete
 C:\Users\erikh\OneDrive\Visual Studio\AmazingMandelbrot\AmazingMandelbrot\obj\Release\AmazingMandelbrot.exe
 C:\Users\erikh\OneDrive\Visual Studio\AmazingMandelbrot\AmazingMandelbrot\obj\Release\AmazingMandelbrot.pdb
+C:\Users\erikh\OneDrive\Visual Studio\AmazingMandelbrot\AmazingMandelbrot\bin\Release\NAudio.dll
+C:\Users\erikh\OneDrive\Visual Studio\AmazingMandelbrot\AmazingMandelbrot\bin\Release\NAudio.xml

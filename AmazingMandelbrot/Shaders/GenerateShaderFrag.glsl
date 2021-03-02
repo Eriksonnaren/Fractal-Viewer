@@ -31,6 +31,8 @@ uniform int UseOldAngle;
 uniform int Julia;
 uniform double JuliaReal;
 uniform double JuliaImag;
+uniform double OffsetReal;
+uniform double OffsetImag;
 uniform vec2 Size;
 const float pi=3.1415926;
 uniform double[64] CoefficientArray;
@@ -120,7 +122,7 @@ vec4 MainCompute(dvec2 C,int index)
 	//double d = 2.3*length(C);
 	//C *=(1+1/(pow(float(d),4)));
 	
-	dvec2 Z = dvec2(0,0);
+	dvec2 Z = dvec2(OffsetReal,OffsetImag);
 	//dvec2 W = dvec2(0);
 	if(Julia==1)
 	{
@@ -187,6 +189,8 @@ vec4 MainCompute(dvec2 C,int index)
 		//Z = Mult(Z+2*W,Z)+0.3*Div(W-C,Z+1)+Mult(Mult(Mult(C,C-W),C),C+W);
 		//Z=Cos(Z)+C;
 		//Z=Z-Div(Sin(Z),Cos(Z))+C;
+		//Z=dvec2(Z.x*Z.x-Z.y*Z.y,-2*abs(Z.x)*Z.y)+C;
+		//Z=Div(Mult(Z,Z),Z+vec2(-0.25,0)+C)-C;
 
 		/*if(L==PeriodSampleIter)
 		{

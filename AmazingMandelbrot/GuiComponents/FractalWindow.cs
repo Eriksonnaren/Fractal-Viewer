@@ -38,7 +38,8 @@ namespace AmazingMandelbrot.GuiComponents
         {
             Controller.projectionMatrix = projectionMatrix;
 
-
+            if (Controller.canUseBuddhaMode&& Controller.buddhaActive)
+                Controller.buddhaController.Update();
         }
         public override void Show(Main D)
         {

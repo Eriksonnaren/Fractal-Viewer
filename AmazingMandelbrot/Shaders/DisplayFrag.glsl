@@ -12,6 +12,11 @@ layout(std140) buffer DataBlock
 {
   DataStruct Data[];
 };
+layout(r32i) uniform coherent iimage2D BuddhaTexR;
+layout(r32i) uniform coherent iimage2D BuddhaTexG;
+layout(r32i) uniform coherent iimage2D BuddhaTexB;
+uniform int BuddhaActive;
+uniform int BuddhaReset;
 #define Tau 6.28318530718
 in vec3 fPosition;
 out vec4 fragColor;
@@ -44,6 +49,16 @@ uniform float FinalDotStrength;
 uniform dvec2 FinalDotPosition;
 uniform float DistanceEstimateColoringLerp;
 
+vec3 GetBuddhaColor(ivec2 Pos)
+{
+	float r = imageLoad(BuddhaTexR,Pos).x;
+	float g = imageLoad(BuddhaTexG,Pos).x;
+	float b = imageLoad(BuddhaTexB,Pos).x;
+	vec3 V = vec3(r,g,b)/100000;//100000
+	float t = Time*0.2;
+	//V *= vec3(ColorScale(t),ColorScale(t+2.094),ColorScale(t+4.1887));
+	return (V.x*vec3(1,0,0))+(V.y*vec3(0,1,0))+(V.z*vec3(0,0,1));
+}
 float hueValue(float h)
 {
     float a = (2.0 * (h - int(h)) - 1.0);
@@ -445,6 +460,16 @@ void main() {
 			Col=LerpColor(Col,Col2,0.7);
 			//if(abs(Z3.x)<0.05*(Z3.y))
 				//Col+=vec3(1,1,1)*0.3;*/
+	if(BuddhaActive>0)
+	{
+		Col=GetBuddhaColor(storePos)*5;
+		if(BuddhaReset)
+		{
+			imageStore(BuddhaTexR,storePos,ivec4(0));
+			imageStore(BuddhaTexG,storePos,ivec4(0));
+			imageStore(BuddhaTexB,storePos,ivec4(0));
+		}
+	}
 	if(QuaternionJulia==1)
 	{
 		vec3 BaseColor=Col;

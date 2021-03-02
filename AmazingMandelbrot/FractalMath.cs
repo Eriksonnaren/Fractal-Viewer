@@ -112,67 +112,6 @@ namespace AmazingMandelbrot
         }
         public Complex FollowFractalFlow(Complex[,] Polynomial, Complex[,] DifferencePolynomial, double dt, Complex Startpoint,int Iterations,out Complex Divergence)
         {
-            /*int MaxZ = Math.Max(Polynomial.GetLength(0), DifferencePolynomial.GetLength(0));
-            int MaxC = Math.Max(Polynomial.GetLength(1), DifferencePolynomial.GetLength(1));
-            Complex[,] SummedPolynomial = new Complex[MaxZ, MaxC];
-            for (int i = 0; i < Polynomial.GetLength(0); i++)
-            {
-                for (int j = 0; j < Polynomial.GetLength(1); j++)
-                {
-                    SummedPolynomial[i, j] = Polynomial[i, j];
-                }
-            }
-            for (int i = 0; i < DifferencePolynomial.GetLength(0); i++)
-            {
-                for (int j = 0; j < DifferencePolynomial.GetLength(1); j++)
-                {
-                    SummedPolynomial[i, j] += DifferencePolynomial[i, j]*dt;
-                }
-            }
-            Complex[] PolynomialConstants = GetCoefficients(Startpoint, Polynomial);
-            
-
-            Complex Guess = Startpoint+GetFractalFlow(Polynomial, DifferencePolynomial, Startpoint, Iterations)* dt;
-            
-            for (int n = 0; n < 0; n++)
-            {
-                Complex[] SummedConstantsDerC = GetDerivativeCoefficients(Guess, SummedPolynomial);
-                Complex[] SummedConstants = GetCoefficients(Guess, SummedPolynomial);
-
-                Complex Z1 = new Complex();
-                Complex Z2 = new Complex();
-                Complex DC = new Complex(1, 0);
-                int ArrayMax1 = Polynomial.GetLength(0) - 1;
-                int ArrayMax2 = SummedPolynomial.GetLength(0) - 1;
-                for (int L = 0; L < Iterations; L++)
-                {
-                    Complex NewZ1 = PolynomialConstants[ArrayMax1];
-
-                    for (int i = ArrayMax1 - 1; i >= 1; i--)
-                    {
-                        NewZ1 = Z1 * NewZ1 + PolynomialConstants[i];
-                    }
-
-                    Z1 = Z1 * NewZ1 + PolynomialConstants[0];
-
-                    Complex DerZ = SummedConstants[ArrayMax2] * ArrayMax2;
-                    Complex DerC = SummedConstantsDerC[ArrayMax2];
-                    Complex NewZ2 = SummedConstants[ArrayMax2];
-                    for (int i = ArrayMax2 - 1; i >= 1; i--)
-                    {
-                        DerZ = Z2 * DerZ + SummedConstants[i] * i;
-                        DerC = Z2 * DerC + SummedConstantsDerC[i];
-                        NewZ2 = Z2 * NewZ2 + SummedConstants[i];
-                    }
-                    DC = DC * DerZ + Z2 * DerC + SummedConstantsDerC[0];
-                    Z2 = Z2 * NewZ2 + SummedConstants[0];
-                    if(DC.MagSq()>Flowbail || Z2.MagSq()> Flowbail || Z1.MagSq()> Flowbail)
-                    {
-                        break;
-                    }
-                }
-                Guess = Guess - (Z2 - Z1) / DC;
-            }*/
             Complex[] PolynomialConstants = GetCoefficients(Startpoint, Polynomial);
             Complex[] PolynomialConstantsDerC = GetDerivativeCoefficients(Startpoint, Polynomial);
             Complex[] PolynomialConstantsDerC2 = GetSecondDerivativeCoefficients(Startpoint, Polynomial);

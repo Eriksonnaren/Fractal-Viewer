@@ -18,3 +18,4 @@ incremental 3d ray march fractal
 manual typing for the iteration amount
 cobweb plot
 bifurcation diagram
+store partially completed iteration between frames and continue later
