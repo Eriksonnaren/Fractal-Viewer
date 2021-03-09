@@ -315,15 +315,15 @@ namespace AmazingMandelbrot
             GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "QuaternionJulia"), QuaternionJulia ? 1 : 0);
             GL.ActiveTexture(TextureUnit.Texture0);
 
-            /*GL.BindBuffer(BufferTarget.ShaderStorageBuffer, IntermediateShaderBuffer);
-            int id = GL.GetProgramResourceIndex(DisplayProgramId, ProgramInterface.ShaderStorageBlock, "DataBlock");
-            GL.ShaderStorageBlockBinding(DisplayProgramId, id, IntermediateShaderBuffer);
-            GL.BindBufferBase(BufferRangeTarget.ShaderStorageBuffer, id, IntermediateShaderBuffer);
-            GL.BindBuffer(BufferTarget.ShaderStorageBuffer, 0);*/
+            //GL.BindBuffer(BufferTarget.ShaderStorageBuffer, IntermediateShaderBuffer);
+            //int id = GL.GetProgramResourceIndex(DisplayProgramId, ProgramInterface.ShaderStorageBlock, "DataBlock");
+            //GL.ShaderStorageBlockBinding(DisplayProgramId, id, IntermediateShaderBuffer);
+            //GL.BindBufferBase(BufferRangeTarget.ShaderStorageBuffer, id, IntermediateShaderBuffer);
+            //GL.BindBuffer(BufferTarget.ShaderStorageBuffer, 0);
             //if((Time*0.3)%1<0.5)
             //GL.BindTexture(TextureTarget.Texture2D, ReverseTexHandle);
             //else
-            GL.BindTexture(TextureTarget.Texture2D, IntermediateTexHandle);
+            GL.BindTexture(TextureTarget.Texture2D, IntermediateTexHandle);//keep this even if it looks like it isnt needed
             GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "sourceTex"), 0);
 
             //GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "reverseTex"), ReverseTexHandle);

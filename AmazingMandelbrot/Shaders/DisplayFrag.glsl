@@ -467,7 +467,7 @@ void main() {
 	if(BuddhaActive>0)
 	{
 		Col=GetBuddhaColor(storePos)*5;
-		if(BuddhaReset)
+		if(BuddhaReset>0)
 		{
 			imageStore(BuddhaTexR,storePos,ivec4(0));
 			imageStore(BuddhaTexG,storePos,ivec4(0));
