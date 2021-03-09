@@ -21,6 +21,7 @@ uniform int BuddhaReset;
 in vec3 fPosition;
 out vec4 fragColor;
 uniform ivec2 resolution;
+uniform ivec2 outputResolution;
 uniform sampler2D sourceTex;
 
 uniform double Zoom;
@@ -245,14 +246,17 @@ ivec2 Get3dPosition(ivec2 OriginalPos)
 void main() {
 	
 	ivec2 storePos = ivec2(fPosition);
+	float scaleFactor = min(resolution.x/float(outputResolution.x),resolution.y/float(outputResolution.y));
+	ivec2 inputPos = ivec2((storePos-outputResolution.xy*0.5)*scaleFactor+resolution.xy*0.5);
+
 	//storePos=Get3dPosition(storePos);
 	vec2 position = (vec2(fPosition.xy)-vec2(resolution.xy)/2)/resolution.x;
 	
 	
 	//storePos =ivec2(position*resolution.x+vec2(resolution.xy)/2);
 
-	vec4 InputColor = texelFetch(sourceTex,storePos,0);
-	int index = int(storePos.y*resolution.x+storePos.x);
+	vec4 InputColor = texelFetch(sourceTex,inputPos,0);
+	int index = int(inputPos.y*resolution.x+inputPos.x);
 	DataStruct data = Data[index];
 	//double S = sin(Time);
 	//double C = cos(Time);
@@ -338,7 +342,7 @@ void main() {
 		//Col.r = a+hueValue2(K) * s;
 		//Col.g = a+hueValue2(K + 0.33) * s;
 		//Col.b = a+hueValue2(K + 0.66) * s;
-		Col +=(GetLight(storePos)*0.3);
+		Col +=(GetLight(inputPos)*0.3);
 		//Col = FancyColor(K);
 		//Col=vec3((E+L)/100.0);
 		double FractionalIteration = fract(data.IterationCount);

@@ -37,6 +37,7 @@ namespace AmazingMandelbrot
         public bool CaptureEvents = true;
         public int DrawingLayerOffset = 0;
         public Color BackgroundColor = Color.LightSlateGray;
+        public bool ShowHoverCursor = false;
         public abstract void Update();
         public abstract void Show(Main M);
         public GuiElement(RectangleF Rect)

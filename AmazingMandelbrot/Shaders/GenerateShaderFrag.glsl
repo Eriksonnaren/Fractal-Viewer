@@ -190,6 +190,7 @@ vec4 MainCompute(dvec2 C,int index)
 		//Z=Cos(Z)+C;
 		//Z=Z-Div(Sin(Z),Cos(Z))+C;
 		//Z=dvec2(Z.x*Z.x-Z.y*Z.y,-2*abs(Z.x)*Z.y)+C;
+		//Z=dvec2(Z.x*Z.x-Z.y*Z.y,2*abs(Z.x)*abs(Z.y))+C;
 		//Z=Div(Mult(Z,Z),Z+vec2(-0.25,0)+C)-C;
 
 		/*if(L==PeriodSampleIter)

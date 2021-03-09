@@ -313,78 +313,22 @@ namespace AmazingMandelbrot
             //ColorOffset += 0.01f;
             GL.UseProgram(DisplayProgramId); 
             GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "QuaternionJulia"), QuaternionJulia ? 1 : 0);
-            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "destTex"), ImageTexHandle);
             GL.ActiveTexture(TextureUnit.Texture0);
 
-            GL.BindBuffer( BufferTarget.ShaderStorageBuffer, IntermediateShaderBuffer);
+            /*GL.BindBuffer(BufferTarget.ShaderStorageBuffer, IntermediateShaderBuffer);
             int id = GL.GetProgramResourceIndex(DisplayProgramId, ProgramInterface.ShaderStorageBlock, "DataBlock");
             GL.ShaderStorageBlockBinding(DisplayProgramId, id, IntermediateShaderBuffer);
             GL.BindBufferBase(BufferRangeTarget.ShaderStorageBuffer, id, IntermediateShaderBuffer);
-            GL.BindBuffer(BufferTarget.ShaderStorageBuffer, 0);
+            GL.BindBuffer(BufferTarget.ShaderStorageBuffer, 0);*/
             //if((Time*0.3)%1<0.5)
             //GL.BindTexture(TextureTarget.Texture2D, ReverseTexHandle);
             //else
-            GL.BindTexture(TextureTarget.Texture2D, IntermediateTexHandle);
-            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "sourceTex"), 0);
-            
+            //GL.BindTexture(TextureTarget.Texture2D, IntermediateTexHandle);
+            //GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "sourceTex"), 0);
+
             //GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "reverseTex"), ReverseTexHandle);
 
-            GL.UniformMatrix4(GL.GetUniformLocation(DisplayProgramId, "projectionMatrix"), false, ref projectionMatrix);
-            Matrix4 I = Matrix4.Identity;
-            GL.UniformMatrix4(GL.GetUniformLocation(DisplayProgramId, "viewMatrix"), false, ref  I);
-            GL.UniformMatrix4(GL.GetUniformLocation(DisplayProgramId, "modelMatrix"), false, ref I);
-            GL.Uniform2(GL.GetUniformLocation(DisplayProgramId, "resolution"), mWidth, mHeight);
-
-            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "Zoom"), Zoom);
-            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "Iter"), Iterations);
-            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "CameraReal"), CameraPos.real);
-            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "CameraImag"), CameraPos.imag);
-            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "ColorOffset"), ColorOffset);
-            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "ColorScale"), ColorScale);
-            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "JuliaReal"), JuliaPos.real);
-            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "JuliaImag"), JuliaPos.imag);
-            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "Julia"), Julia ? 1 : 0);
-            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "Time"), Time); 
-            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "PeriodHighlight"), PeriodHighlight);
-            double[] Arr = new double[CoefficientArray.GetLength(0) * CoefficientArray.GetLength(1) * 2];
-            for (int i = 0; i < CoefficientArray.GetLength(0); i++)
-            {
-                for (int j = 0; j < CoefficientArray.GetLength(1); j++)
-                {
-                    int k = i + j * CoefficientArray.GetLength(0);
-                    Arr[k * 2] = CoefficientArray[i, j].real;
-                    Arr[k * 2 + 1] = CoefficientArray[i, j].imag;
-                }
-            }
-            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "ArrayMaxZ"), CoefficientArray.GetLength(0));
-            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "ArrayMaxC"), CoefficientArray.GetLength(1));
-            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "CoefficientArray"), Arr.Length, Arr);
-            float[] ColorArr = new float[ColorPalette.Length*4];
-            for (int i = 0; i < ColorPalette.Length; i++)
-            {
-                ColorArr[4 * i] = PalettePositions[i];
-                ColorArr[4 * i+1] = ColorPalette[i].R;
-                ColorArr[4 * i+2] = ColorPalette[i].G;
-                ColorArr[4 * i+3] = ColorPalette[i].B;
-            }
-            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "ColorData"), ColorArr.Length, ColorArr);
-            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "PalleteSize"), PaletteSize);
-            GL.Uniform4(GL.GetUniformLocation(DisplayProgramId, "InteriorColor"), InteriorColor);
-
-            Vector2 V = new Vector2((float)IterationPoint.real, (float)IterationPoint.imag);
-            GL.Uniform2(GL.GetUniformLocation(DisplayProgramId, "IterationPoint"), ref V); 
-            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "CenterDotStrength"), CenterDotStrength);
-            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "FinalDotStrength"), FinalDotStrength);
-            GL.Uniform2(GL.GetUniformLocation(DisplayProgramId, "FinalDotPosition"), FinalDotPosition.real, FinalDotPosition.imag);
-            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "DistanceEstimateColoringLerp"), (float)DistanceEstimateColoringLerp);
-            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "BuddhaActive"), canUseBuddhaMode && buddhaActive ? 1:0);
-            if(canUseBuddhaMode && buddhaActive)
-            {
-                GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "BuddhaTexR"), buddhaController.colorTexR);
-                GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "BuddhaTexG"), buddhaController.colorTexG);
-                GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "BuddhaTexB"), buddhaController.colorTexB);
-                GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "BuddhaReset"), BuddhaReset ? 1 : 0);
-            }
+            PrepareDrawShader(mWidth,mHeight,projectionMatrix);
             BuddhaReset = false;
             //GL.DispatchCompute(mWidth / GroupSize + 1, mHeight / GroupSize + 1, 1);
 
@@ -530,6 +474,98 @@ namespace AmazingMandelbrot
             GL.UseProgram(0);
 
             camera3D.End3d();
+        }
+        void PrepareDrawShader(int width, int height, Matrix4 project)
+        {
+            GL.BindBuffer(BufferTarget.ShaderStorageBuffer, IntermediateShaderBuffer);
+            int id = GL.GetProgramResourceIndex(BackCopyProgramId, ProgramInterface.ShaderStorageBlock, "DataBlock");
+            GL.ShaderStorageBlockBinding(BackCopyProgramId, id, IntermediateShaderBuffer);
+            GL.BindBufferBase(BufferRangeTarget.ShaderStorageBuffer, id, IntermediateShaderBuffer);
+            GL.BindBuffer(BufferTarget.ShaderStorageBuffer, 0);
+
+            GL.UniformMatrix4(GL.GetUniformLocation(DisplayProgramId, "projectionMatrix"), false, ref project);
+            Matrix4 I = Matrix4.Identity;
+            GL.UniformMatrix4(GL.GetUniformLocation(DisplayProgramId, "viewMatrix"), false, ref I);
+            GL.UniformMatrix4(GL.GetUniformLocation(DisplayProgramId, "modelMatrix"), false, ref I);
+            GL.Uniform2(GL.GetUniformLocation(DisplayProgramId, "resolution"), mWidth, mHeight); 
+            GL.Uniform2(GL.GetUniformLocation(DisplayProgramId, "outputResolution"), width, height);
+
+            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "Zoom"), Zoom);
+            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "Iter"), Iterations);
+            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "CameraReal"), CameraPos.real);
+            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "CameraImag"), CameraPos.imag);
+            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "ColorOffset"), ColorOffset);
+            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "ColorScale"), ColorScale);
+            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "JuliaReal"), JuliaPos.real);
+            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "JuliaImag"), JuliaPos.imag);
+            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "Julia"), Julia ? 1 : 0);
+            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "Time"), Time);
+            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "PeriodHighlight"), PeriodHighlight);
+            double[] Arr = new double[CoefficientArray.GetLength(0) * CoefficientArray.GetLength(1) * 2];
+            for (int i = 0; i < CoefficientArray.GetLength(0); i++)
+            {
+                for (int j = 0; j < CoefficientArray.GetLength(1); j++)
+                {
+                    int k = i + j * CoefficientArray.GetLength(0);
+                    Arr[k * 2] = CoefficientArray[i, j].real;
+                    Arr[k * 2 + 1] = CoefficientArray[i, j].imag;
+                }
+            }
+            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "ArrayMaxZ"), CoefficientArray.GetLength(0));
+            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "ArrayMaxC"), CoefficientArray.GetLength(1));
+            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "CoefficientArray"), Arr.Length, Arr);
+            float[] ColorArr = new float[ColorPalette.Length * 4];
+            for (int i = 0; i < ColorPalette.Length; i++)
+            {
+                ColorArr[4 * i] = PalettePositions[i];
+                ColorArr[4 * i + 1] = ColorPalette[i].R;
+                ColorArr[4 * i + 2] = ColorPalette[i].G;
+                ColorArr[4 * i + 3] = ColorPalette[i].B;
+            }
+            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "ColorData"), ColorArr.Length, ColorArr);
+            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "PalleteSize"), PaletteSize);
+            GL.Uniform4(GL.GetUniformLocation(DisplayProgramId, "InteriorColor"), InteriorColor);
+
+            Vector2 V = new Vector2((float)IterationPoint.real, (float)IterationPoint.imag);
+            GL.Uniform2(GL.GetUniformLocation(DisplayProgramId, "IterationPoint"), ref V);
+            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "CenterDotStrength"), CenterDotStrength);
+            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "FinalDotStrength"), FinalDotStrength);
+            GL.Uniform2(GL.GetUniformLocation(DisplayProgramId, "FinalDotPosition"), FinalDotPosition.real, FinalDotPosition.imag);
+            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "DistanceEstimateColoringLerp"), (float)DistanceEstimateColoringLerp);
+            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "BuddhaActive"), canUseBuddhaMode && buddhaActive ? 1 : 0);
+            if (canUseBuddhaMode && buddhaActive)
+            {
+                GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "BuddhaTexR"), buddhaController.colorTexR);
+                GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "BuddhaTexG"), buddhaController.colorTexG);
+                GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "BuddhaTexB"), buddhaController.colorTexB);
+                GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "BuddhaReset"), BuddhaReset ? 1 : 0);
+            }
+        }
+        public void DrawExternal(int width,int height,Matrix4 project)
+        {
+            GL.UseProgram(DisplayProgramId);
+            PrepareDrawShader(width,height,project);
+
+            GL.Color3(1.0, 1.0, 1.0);
+            //GL.Enable(EnableCap.Texture2D);
+
+            //Console.WriteLine("Draw rendering quad at time: {0}", Main.stopwatch.Elapsed.TotalMilliseconds);
+            GL.Begin(PrimitiveType.Quads);
+            float realWidth = width;
+            float realHeight = height;
+            //GL.TexCoord2(0.0f, 0.0f);
+            GL.Vertex2(0f, 0f);
+
+            //GL.TexCoord2(10.0f, 0.0f);
+            GL.Vertex2(realWidth, 0f);
+            //GL.TexCoord2(1.0f, 1.0f);
+            GL.Vertex2(realWidth, realHeight);
+            //GL.TexCoord2(0.0f, 1.0f);
+            GL.Vertex2(0f, realHeight);
+            GL.End();
+
+           // GL.Disable(EnableCap.Texture2D);
+            GL.UseProgram(0);
         }
         public void SetupBuddhaController()
         {

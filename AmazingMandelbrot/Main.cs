@@ -31,6 +31,7 @@ namespace AmazingMandelbrot
         FractalWindow AutoZoomButton;
         EmptyComponent ExampleButton;
         FractalWindow MeshToggleButton;
+        List<GuiElement> MenuButtons=new List<GuiElement>();
         ExampleLocationComponent ExampleLocationComponent;
         bool EnableMinibrots;
         int CurrentMinibrotOrder;
@@ -49,6 +50,7 @@ namespace AmazingMandelbrot
         Complex[,] DifferenceCoefficientArray;
         TextDisplay PolynomialTextDisplay;
         public PolynomialParser polynomialParser=new PolynomialParser();
+        public PolynomialParser2 polynomialParser2 = new PolynomialParser2();
         Timer ErrorTimer = new Timer(50);
         int TextCursorTimer;
         public static double PolynomialAnimationTimer = 1;
@@ -75,6 +77,7 @@ namespace AmazingMandelbrot
         EmptyComponent SoundContainer;
         EmptyComponent BuddhabrotProgressbar;
         FractalWindow BuddhaToggleButton;
+        ParameterController parameterController;
         public Main(Size Size)
         {
             soundGenerator = new SoundGenerator();
@@ -91,10 +94,15 @@ namespace AmazingMandelbrot
             MainFractalWindow.LateDraw += MainDrawLate;
             GuiHandler.Elements.Add(MainFractalWindow);
             MainFractalWindow.Controller.SetupBuddhaController();
+            
 
             int Y = 10;
             PolynomialTextDisplay = new TextDisplay(new RectangleF(10, Y, 300, 40));
             GuiHandler.Elements.Add(PolynomialTextDisplay);
+            parameterController = new ParameterController(new Rectangle(10, Y+=50,200,80),polynomialParser2);
+            //GuiHandler.Elements.Add(parameterController);
+            Y -= 50;
+
             ExampleButton = new EmptyComponent(new RectangleF(PolynomialTextDisplay.Rect.Right+10, 10,40,40));
             ExampleButton.MouseDownEvent += ExampleButtonClicked;
             ExampleButton.LateDraw += ExampleButtonDrawLate;
@@ -114,6 +122,7 @@ namespace AmazingMandelbrot
             GuiHandler.Elements.Add(ColorEditor);
 
             ColorMenuButton = new FractalWindow(new Rectangle(10, Y += 40, 70, 70));
+            MenuButtons.Add(ColorMenuButton);
             ColorMenuButton.Controller.CameraPos = new Complex(-0.5,0);
             ColorMenuButton.Controller.Zoom = 1.5;
             ColorMenuButton.Controller.ColorScale = 20;
@@ -124,11 +133,13 @@ namespace AmazingMandelbrot
             GuiHandler.Elements.Add(ColorMenuButton);
 
             RotationCompass = new EmptyComponent(new Rectangle(10, Y += 80, 70, 70));
+            MenuButtons.Add(RotationCompass);
             RotationCompass.LateDraw += CompassDrawLate;
             RotationCompass.MouseDownEvent += CompassClicked;
             GuiHandler.Elements.Add(RotationCompass);
 
             AutoZoomButton = new FractalWindow(new Rectangle(10, Y += 80, 70, 70));
+            MenuButtons.Add(AutoZoomButton);
             AutoZoomButton.MouseDownEvent += AutoZoomClicked;
             AutoZoomButton.LateDraw += AutoZoomDrawLate;
             AutoZoomButton.Controller.CameraPos = new Complex(-1.20635, -0.3161);
@@ -138,6 +149,7 @@ namespace AmazingMandelbrot
             GuiHandler.Elements.Add(AutoZoomButton);
 
             ScreenshotButton = new FractalWindow(new Rectangle(10, Y += 80, 70, 70));
+            MenuButtons.Add(ScreenshotButton);
             ScreenshotButton.MouseDownEvent += ScreenshotButtonClicked;
             ScreenshotButton.LateDraw += ScreenshotButtonDrawLate;
             ScreenshotButton.Controller.CameraPos = new Complex( -1.20653,-0.316380400581047);
@@ -147,6 +159,7 @@ namespace AmazingMandelbrot
             GuiHandler.Elements.Add(ScreenshotButton);
 
             MeshToggleButton = new FractalWindow(new Rectangle(10, Y += 80, 70, 70));
+            MenuButtons.Add(MeshToggleButton);
             MeshToggleButton.EnableInteraction = false;
             MeshToggleButton.MouseDownEvent += MeshToggleClick;
             GuiHandler.Elements.Add(MeshToggleButton);
@@ -158,6 +171,7 @@ namespace AmazingMandelbrot
             GuiHandler.Elements.Add(BuddhabrotProgressbar);
 
             BuddhaToggleButton = new FractalWindow(new Rectangle(10, Y += 80, 70, 70));
+            MenuButtons.Add(BuddhaToggleButton);
             BuddhaToggleButton.EnableInteraction = false;
             BuddhaToggleButton.MouseDownEvent += BuddhaToggleClick;
             GuiHandler.Elements.Add(BuddhaToggleButton);
@@ -231,11 +245,36 @@ namespace AmazingMandelbrot
             AutoZoomController.ColorEditor = ColorEditor;
             MainFractalWindow.Controller.GenerateMesh(500, 1000);
             //MainFractalWindow.Controller.SetMeshActive(true);
-            
+            for (int i = 0; i < MenuButtons.Count; i++)
+            {
+                MenuButtons[i].ShowHoverCursor=true;
+            }
+            //parameterController.parameterContainers[0].linkedFractalWindow = CursorSystem.JuliaWindow;
+            //parameterController.parameterContainers[1].linkedFractalWindow = MainFractalWindow;
+
         }
         public void Update()
         {
-            if(CompassResetTimer>0)
+            /*float Y = parameterController.Rect.Bottom+10;
+            IterationDisplay.Rect.Y = Y;
+            Y += 40;
+            IterationSlider.Rect.Y = Y;
+            Y += 40;
+            int X = 10;
+            for (int i = 0; i < MenuButtons.Count; i++)
+            {
+                MenuButtons[i].Rect.X = X;
+                MenuButtons[i].Rect.Y = Y;
+                if ((i % 2) != 0)
+                {
+                    X = 10;
+                    Y += 80;
+                }
+                else
+                    X = 90;
+            }*/
+
+            if (CompassResetTimer>0)
             {
                 CompassResetTimer--;
                 double A = CompassResetTimer / (double)CompassResetTimerMax;
@@ -446,7 +485,11 @@ namespace AmazingMandelbrot
             SetOrthographicProjection(0, 0, Size.Width, Size.Height);
             GuiHandler.UpdateCurrentElement();
             if (IsFocused)
+            {
                 GuiHandler.UpdateMouse(MousePos, MouseButtons);
+                Form1.instance.SetCursor(GuiHandler.formCursor);
+            }
+
             GuiHandler.ShowAll(this);
             
         }
@@ -1060,10 +1103,12 @@ namespace AmazingMandelbrot
         }
         public void TypeChar(char C)
         {
+            //polynomialParser2.InputChar(C);
             polynomialParser.InputChar(C);
         }
         public void TypeKey(Keys K)
         {
+            //polynomialParser2.InputKey(K);
             polynomialParser.InputKey(K);
             if(K == Keys.Enter)
             {
@@ -1112,6 +1157,7 @@ namespace AmazingMandelbrot
             Bitmap bitmap = new Bitmap(Size.Width, Size.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
             BitmapData bData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadWrite, bitmap.PixelFormat);
             GL.ReadPixels(0, 0, Size.Width, Size.Height, OpenTK.Graphics.OpenGL.PixelFormat.Bgra, PixelType.UnsignedByte, bData.Scan0);
+            
             bitmap.UnlockBits(bData);
             bitmap.RotateFlip(RotateFlipType.RotateNoneFlipY);
             return bitmap;

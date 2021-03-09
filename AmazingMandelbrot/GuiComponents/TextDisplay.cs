@@ -18,6 +18,7 @@ namespace AmazingMandelbrot.GuiComponents
         int texture = -1;
         static Font font = new Font("Arial Black", 10);
         BitmapData data;
+        StringFormat SF = new StringFormat() { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
         public TextDisplay(RectangleF Rect) : base(Rect)
         {
             bmp = new Bitmap((int)Rect.Width, (int)Rect.Height, System.Drawing.Imaging.PixelFormat.Format32bppRgb);
@@ -78,6 +79,10 @@ namespace AmazingMandelbrot.GuiComponents
             if (data != null)
                 bmp.UnlockBits(data);
             gfx.Clear(Color.FromArgb(0, 0, 0, 0));
+        }
+        public void DrawCenteredText(string s,Brush col,int fontsize)
+        {
+            gfx.DrawString(s, new Font("Arial Black", fontsize), col, Rect.Width / 2, Rect.Height / 2, SF);
         }
     }
 }

@@ -231,5 +231,46 @@ namespace AmazingMandelbrot
             Complex R = -DT / DC;
             return R;
         }
+        public static Complex[,] GetCoefficientArrayFromPolynomial(List<PolynomialParser2.PolynomialNode> polynomial,int dependentVariable, Complex[] Constants)
+        {
+            int MaxZ=0;
+            int MaxVar=0;
+            for (int i = 0; i < polynomial.Count; i++)
+            {
+                if(polynomial[i].Variables.ContainsKey(0))
+                {
+                    MaxZ = Math.Max(MaxZ, polynomial[i].Variables[0]);
+                }
+                if (polynomial[i].Variables.ContainsKey(dependentVariable)&& dependentVariable>0)
+                {
+                    MaxVar = Math.Max(MaxVar, polynomial[i].Variables[dependentVariable]);
+                }
+            }
+
+            Complex[,] arr = new Complex[MaxZ+1, MaxVar+1];
+            for (int i = 0; i < polynomial.Count; i++)
+            {
+                Complex C = polynomial[i].Scalar;
+                int IndexZ = 0;
+                int IndexVar = 0;
+                for (int j = 0; j < polynomial[i].Variables.Count; j++)
+                {
+                    int v = polynomial[i].Variables.Keys.ElementAt(j);
+                    if (v == 0)
+                        IndexZ = polynomial[i].Variables[v];
+                    else if(v == dependentVariable)
+                        IndexVar = polynomial[i].Variables[v];
+                    else
+                    {
+                        for (int k = 0; k < polynomial[i].Variables[v]; k++)
+                        {
+                            C *= Constants[v];
+                        }
+                    }
+                }
+                arr[IndexZ, IndexVar] = C;
+            }
+            return arr;
+        }
     }
 }

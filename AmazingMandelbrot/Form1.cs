@@ -26,6 +26,7 @@ namespace AmazingMandelbrot
         Main Main;
         Stopwatch stopwatch = new Stopwatch();
         int ResizeTimer = 0;
+        public static Form1 instance;
         public Form1()
         {
             InitializeComponent();
@@ -33,14 +34,14 @@ namespace AmazingMandelbrot
         
         private void Form1_Load(object sender, EventArgs e)
         {
-            
-            
+            instance = this;
+
             MouseWheel += Form1_MouseWheel;
             //string S = Application.LocalUserAppDataPath;
             
             GraphicsMode graphicsMode = new GraphicsMode(new ColorFormat(8, 8, 8, 8), 24,8,4);
-            //GLcontrol = new GLControl(graphicsMode, 6, 4, GraphicsContextFlags.ForwardCompatible);
-            GLcontrol = new GLControl(graphicsMode);
+            GLcontrol = new GLControl(graphicsMode, 6, 4, GraphicsContextFlags.ForwardCompatible);
+            //GLcontrol = new GLControl(graphicsMode);
 
             GLcontrol.Dock = DockStyle.Fill;
             WindowState = FormWindowState.Maximized;
@@ -61,7 +62,7 @@ namespace AmazingMandelbrot
             GL.Viewport(0, 0, w, h);
             Main = new Main(GLcontrol.Size);
             //Console.WriteLine();
-
+            
         }
 
         private void T_Tick(object sender, EventArgs e)
@@ -69,7 +70,7 @@ namespace AmazingMandelbrot
             
             int w = GLcontrol.Width;
             int h = GLcontrol.Height;
-            
+
             GLcontrol.MakeCurrent();
             //GL.ClearColor(Color.Blue);
             SetOrthographicProjection(0, 0, w, h);
@@ -77,9 +78,9 @@ namespace AmazingMandelbrot
             //ShaderController.Compute();
 
             Main.Update();
-            if(ResizeTimer>0)
+            if (ResizeTimer > 0)
                 ResizeTimer--;
-            if (ResizeTimer==1)
+            if (ResizeTimer == 1)
             {
                 Main.Resize(GLcontrol.Width, GLcontrol.Height);
             }
@@ -89,8 +90,14 @@ namespace AmazingMandelbrot
                 GLcontrol.SwapBuffers();
             }
             //ShaderController.Draw();
-            
-            
+
+        }
+        
+        public void SetCursor(Cursor c)
+        {
+            Cursor = c;
+            //Cursor = new Cursor(GetType(),"");
+            //Cursor = Cursors.SizeWE;
         }
         public void SetOrthographicProjection(int x, int y, int w, int h)
         {

@@ -45,7 +45,7 @@ namespace AmazingMandelbrot.GuiComponents
             MouseUpEvent += MouseUp;
             MouseDownEvent += MouseDown;
             HoverEndEvent += LeaveHover;
-
+            HoverEvent += Hover;
         }
         public override void Update()
         {
@@ -62,11 +62,16 @@ namespace AmazingMandelbrot.GuiComponents
             {
                 int HandlePos = (int)(Value * (Rect.Width - HandleRectangleSize.Width - Padding * 2)) + Padding;
                 HandleRect = new RectangleF(HandlePos, Padding, HandleRectangleSize.Width, HandleRectangleSize.Height);
+                
             }
             else
             {
                 int HandlePos = (int)((1 - Value) * (Rect.Height - HandleRectangleSize.Height - Padding * 2)) + Padding;
                 HandleRect = new RectangleF(Padding, HandlePos, HandleRectangleSize.Width, HandleRectangleSize.Height);
+                if (HoldingHandle)
+                {
+                    GuiHandler.cursorType = GuiHandler.CursorTypes.ArrowVertical;
+                }
             }
             Color Border = HoldingHandle ? Color.White : Color.LightGray;
             float Padding2 = 3;
@@ -172,6 +177,19 @@ namespace AmazingMandelbrot.GuiComponents
                     SmoothEnd = SmoothStart + Math.Sign(SmoothEnd - SmoothStart) * SmoothMaxDistance;
                 }
             }
+        }
+        void Hover(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
+        {
+            if (HandleRect.Contains((int)MousePos.X, (int)MousePos.Y))
+            {
+               // GuiHandler.cursorType = GuiHandler.CursorTypes.Hand;
+                if(Orientation == SliderOrientation.Horizontal)
+                    GuiHandler.cursorType = GuiHandler.CursorTypes.ArrowHorizontal;
+                else
+                    GuiHandler.cursorType = GuiHandler.CursorTypes.ArrowVertical;
+
+            }
+
         }
         void MouseUp(GuiElement Sender, PointF MousePos, MouseButtons ButtonStatus)
         {

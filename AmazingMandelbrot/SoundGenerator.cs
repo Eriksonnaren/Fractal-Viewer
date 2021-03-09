@@ -52,7 +52,7 @@ namespace AmazingMandelbrot
         public Complex C = new Complex();
         Complex AveragePoint=new Complex();
         Vector2 RotationPoint=new Vector2(1,0);
-        double PreviousHeight;
+        double[] PreviousHeights=new double[3];
         double Height;
         public FractalWaveProvider(int sampleRate = 44100)
         {
@@ -70,17 +70,21 @@ namespace AmazingMandelbrot
                 if (Phase >= period)//only one fractal step every period amount of buffer steps
                 {
                     Phase = 0;
-                    PreviousHeight = Height;
+                    for (int i = 0; i <2; i++)
+                    {
+                        PreviousHeights[i] = PreviousHeights[i + 1];
+                    }
+                    PreviousHeights[2] = Height;
                     Complex oldZ = Z;
                     //use helper class to update Z
                     Z = fractalMath.Compute(Z);
                     Vector2 Zv = new Vector2((float)(Z.real - AveragePoint.real), (float)(Z.imag - AveragePoint.imag));
                     Vector2 Projection = Zv * Vector2.Dot(RotationPoint, Zv) / Vector2.Dot(Zv, Zv);
                     //RotationPoint is trying to point along the axis that has the longest difference in Z values
-                    RotationPoint += Projection / 10;
+                    RotationPoint += Projection / 20;
                     RotationPoint.Normalize();
                     //AveragePoint is the middlepoint of all the Z values when in a cycle
-                    AveragePoint += (Z - AveragePoint) / 10;
+                    AveragePoint += (Z - AveragePoint) / 20;
                     //the wave height is the projection of (Z-AveragePoint) onto RotationPoint
                     Height = Vector2.Dot(Zv, RotationPoint);
                     //poor attemt at normalizing volume
@@ -95,14 +99,31 @@ namespace AmazingMandelbrot
                 double T = Phase / (float)period;
                 //use beizer curve to make the lerp value more sine-like
                 T = Beizer(T);
-                buffer[n + offset] = (float)(PreviousHeight * (1 - T) + Height * (T)) * 0.3f* (float)Volume;
+                //double H = CubicInterpolate(PreviousHeights[0], PreviousHeights[1], PreviousHeights[2], Height,T);
+                buffer[n + offset] = (float)(PreviousHeights[2] * (1 - T) + Height*T) * 0.3f* (float)Volume;
             }
             Phase = Phase % period;
             return count;
         }
         double Beizer(double X)
         {
-            return X * X * (3 - X * 2);
+            return (1 - Math.Cos(Math.PI * X))*0.5;
+            //return X * X * (3 - X * 2);
+        }
+        double CubicInterpolate(
+   double y0, double y1,
+   double y2, double y3,
+   double mu)
+        {
+            double a0, a1, a2, a3, mu2;
+
+            mu2 = mu * mu;
+            a0 = y3 - y2 - y0 + y1;
+            a1 = y0 - y1 - a0;
+            a2 = y2 - y0;
+            a3 = y1;
+
+            return (a0 * mu * mu2 + a1 * mu2 + a2 * mu + a3);
         }
     }
 }

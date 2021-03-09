@@ -159,5 +159,9 @@ namespace AmazingMandelbrot
         {
             return C.real == real && C.imag == imag;
         }
+        public static implicit operator Complex(double d)
+        {
+            return new Complex(d, 0);
+        }
     }
 }

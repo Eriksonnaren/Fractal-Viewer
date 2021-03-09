@@ -33,6 +33,18 @@ namespace AmazingMandelbrot
         Stack<PointF> RelativeMousePosStack = new Stack<PointF>();
         private Matrix4 projectionMatrix;
         private Matrix4 modelViewMatrix;
+        public enum CursorTypes
+        {
+            Default,
+            Hand,
+            ArrowHorizontal,
+            ArrowVertical,
+        }
+        public static Cursor formCursor;
+        public static CursorTypes cursorType{ get { return cursorTypePrivate; } set { cursorTypePrivate = value; cursorChanged = true; } }
+        static CursorTypes cursorTypePrivate = CursorTypes.Default;
+        static CursorTypes cursorTypeOld = CursorTypes.Default;
+        static bool cursorChanged;
         struct ElementDrawStruct
         {
             public GuiElement Element;
@@ -151,6 +163,7 @@ namespace AmazingMandelbrot
         }
         public void UpdateMouse(PointF MousePos, MouseButtons ButtonStatus)
         {
+            
             this.MousePos = MousePos;
             if (ButtonStatus != MouseButtons.None)
             {
@@ -183,6 +196,7 @@ namespace AmazingMandelbrot
             {
                 CurrentElement.HoverEvent.Invoke(CurrentElement, GetRelativeMousePos(MousePos), ButtonStatus);
             }
+            
             if (PreviousElement != null && PreviousElement != CurrentElement && PreviousElement.HoverEndEvent != null)
             {
                 PreviousElement.HoverEndEvent.Invoke(PreviousElement, GetRelativeMousePos(MousePos), ButtonStatus);
@@ -190,6 +204,31 @@ namespace AmazingMandelbrot
             PreviousElement = CurrentElement;
             MousePosPrev = MousePos;
             PrevButton = ButtonStatus;
+            if (CurrentElement != null&&CurrentElement.ShowHoverCursor)
+            {
+                cursorType = CursorTypes.Hand;
+            }
+            if(!cursorChanged)
+            {
+                cursorType = CursorTypes.Default;
+            }
+            if (cursorTypeOld!= cursorType)
+            {
+                formCursor = GetCussorType(cursorType);
+                cursorTypeOld = cursorType;
+            }
+            cursorChanged = false;
+        }
+        Cursor GetCussorType(CursorTypes type)
+        {
+            switch (type)
+            {
+                case CursorTypes.Default: return Cursors.Default;
+                case CursorTypes.Hand:return Cursors.Hand;
+                case CursorTypes.ArrowHorizontal: return Cursors.SizeWE;
+                case CursorTypes.ArrowVertical: return Cursors.SizeNS;
+                default:return Cursors.Default;
+            }
         }
 
         public void UpdateCurrentElement()

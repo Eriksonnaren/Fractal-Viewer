@@ -22,6 +22,8 @@ namespace AmazingMandelbrot.GuiComponents
         public Complex OrbitPosition;
         public float OrbitScale = 1;
         public int StrippleScale = 2;
+        public char DependentVariable;
+        public List<PolynomialParser2.PolynomialNode> polynomial;
         public FractalWindow(RectangleF Rect) : base(Rect)
         {
             Controller = new ShaderController((int)Rect.Width, (int)Rect.Height);
@@ -173,6 +175,7 @@ namespace AmazingMandelbrot.GuiComponents
         }
         void Drag(GuiElement Sender, PointF MousePos, PointF StartPos, PointF DeltaPos, MouseButtons ButtonStatus)
         {
+            
             if (EnableInteraction&& ButtonStatus== MouseButtons.Left&&Main.PolynomialAnimationTimer>=1)
             {
                 if (Controller.MeshActive)
