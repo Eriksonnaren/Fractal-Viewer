@@ -323,8 +323,8 @@ namespace AmazingMandelbrot
             //if((Time*0.3)%1<0.5)
             //GL.BindTexture(TextureTarget.Texture2D, ReverseTexHandle);
             //else
-            //GL.BindTexture(TextureTarget.Texture2D, IntermediateTexHandle);
-            //GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "sourceTex"), 0);
+            GL.BindTexture(TextureTarget.Texture2D, IntermediateTexHandle);
+            GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "sourceTex"), 0);
 
             //GL.Uniform1(GL.GetUniformLocation(DisplayProgramId, "reverseTex"), ReverseTexHandle);
 
